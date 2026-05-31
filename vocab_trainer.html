@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>英単語トレーナー v2.4</title>
+<title>英単語トレーナー v2.6</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;font-size:17px;}
@@ -91,7 +91,7 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
 
 <!-- HOME -->
 <div class="screen active" id="s-home">
-  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v2.4</span></h1>
+  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v2.6</span></h1>
   <p class="subtitle">音声・テキスト両対応 / レベル管理</p>
 
   <div class="stat-grid">
@@ -103,8 +103,10 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
   <div class="card">
     <div class="label">OpenAI APIキー（初回のみ）</div>
     <input type="password" class="input" id="api-input" placeholder="sk-..." style="margin-bottom:8px;">
-    <button class="btn-sm btn-primary" onclick="saveKey()">保存</button>
-    <div class="api-status" id="key-st"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-sm btn-primary" onclick="saveKey()">保存</button>
+      <span class="api-status" id="key-st"></span>
+    </div>
   </div>
 
   <div class="card">
@@ -175,8 +177,8 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
   </div>
 
   <div class="mic-area" id="mic-area" onclick="toggleMic()">
-    <div class="mic-icon">🎙</div>
-    <div class="mic-lbl" id="mic-lbl">タップして音声で回答</div>
+    <span class="mic-icon" style="vertical-align:middle;">🎙</span>
+    <span class="mic-lbl" id="mic-lbl" style="vertical-align:middle;margin-left:8px;">タップして音声で回答</span>
     <div class="transcript" id="transcript"></div>
   </div>
 
