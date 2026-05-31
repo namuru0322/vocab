@@ -3,81 +3,82 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>英単語トレーナー v1.1</title>
+<title>英単語トレーナー v1.6</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;}
-.app{max-width:430px;margin:0 auto;padding:12px;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;font-size:17px;}
+.app{max-width:430px;margin:0 auto;padding:14px;}
 .screen{display:none;}
 .screen.active{display:block;}
-h1{font-size:20px;font-weight:600;text-align:center;padding:12px 0 4px;}
-.subtitle{font-size:13px;color:#6e6e73;text-align:center;margin-bottom:14px;}
-.card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
-.btn{display:block;width:100%;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;text-align:center;transition:opacity 0.15s,transform 0.1s;}
+h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
+.subtitle{font-size:15px;color:#6e6e73;text-align:center;margin-bottom:16px;}
+.card{background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+.btn{display:block;width:100%;padding:15px;border:none;border-radius:14px;font-size:17px;font-weight:600;cursor:pointer;text-align:center;transition:opacity 0.15s,transform 0.1s;}
 .btn:active{transform:scale(0.97);}
 .btn-primary{background:#0071e3;color:#fff;}
 .btn-primary:hover{opacity:0.9;}
 .btn-secondary{background:#e8e8ed;color:#1d1d1f;}
 .btn-secondary:hover{background:#d8d8de;}
-.btn-sm{padding:8px 14px;font-size:13px;width:auto;display:inline-block;border-radius:10px;border:none;cursor:pointer;font-weight:500;}
-.btn-icon{width:38px;height:38px;border-radius:10px;border:none;background:#e8e8ed;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:18px;}
+.btn-sm{padding:10px 16px;font-size:15px;width:auto;display:inline-block;border-radius:12px;border:none;cursor:pointer;font-weight:600;}
+.btn-icon{width:46px;height:46px;border-radius:12px;border:none;background:#e8e8ed;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:22px;}
 .btn-icon:hover{background:#d8d8de;}
-.input{width:100%;padding:10px 12px;border:1px solid #d2d2d7;border-radius:10px;font-size:15px;background:#fff;color:#1d1d1f;outline:none;}
+.input{width:100%;padding:13px 14px;border:1px solid #d2d2d7;border-radius:12px;font-size:17px;background:#fff;color:#1d1d1f;outline:none;}
 .input:focus{border-color:#0071e3;}
-.label{font-size:12px;color:#6e6e73;margin-bottom:5px;}
-.muted{color:#6e6e73;font-size:13px;}
-.badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+.label{font-size:14px;color:#6e6e73;margin-bottom:6px;}
+.muted{color:#6e6e73;font-size:15px;}
+.badge{display:inline-block;font-size:13px;padding:4px 11px;border-radius:20px;font-weight:600;}
 .badge-lv1{background:#e1f0ff;color:#0051a8;}
 .badge-lv2{background:#e3f5e1;color:#1a7318;}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
-.stat-box{border-radius:12px;padding:10px;text-align:center;}
-.stat-box .num{font-size:22px;font-weight:600;}
-.stat-box .lbl{font-size:11px;margin-top:2px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.stat-box{border-radius:14px;padding:12px;text-align:center;}
+.stat-box .num{font-size:26px;font-weight:700;}
+.stat-box .lbl{font-size:13px;margin-top:2px;}
 .stat-total{background:#f5f5f7;}
 .stat-lv1{background:#e1f0ff;color:#0051a8;}
 .stat-lv2{background:#e3f5e1;color:#1a7318;}
-.btn-row{display:flex;gap:8px;margin-bottom:8px;}
+.btn-row{display:flex;gap:10px;margin-bottom:10px;}
 .btn-row .btn{flex:1;}
-.word-display{font-size:26px;font-weight:600;text-align:center;padding:18px 8px 6px;line-height:1.3;color:#1d1d1f;}
-.cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f5f5f7;color:#6e6e73;margin-bottom:6px;}
-.streak-row{display:flex;justify-content:center;align-items:center;gap:14px;padding:6px 0;}
-.dots{display:flex;gap:5px;}
-.dot{width:10px;height:10px;border-radius:50%;background:#d2d2d7;}
+.word-display{font-size:30px;font-weight:700;text-align:center;padding:20px 8px 8px;line-height:1.3;color:#1d1d1f;}
+.cat-tag{display:inline-block;font-size:14px;padding:4px 10px;border-radius:10px;background:#f5f5f7;color:#6e6e73;margin-bottom:6px;}
+.streak-row{display:flex;justify-content:center;align-items:center;gap:16px;padding:8px 0;}
+.dots{display:flex;gap:6px;}
+.dot{width:13px;height:13px;border-radius:50%;background:#d2d2d7;}
 .dot.on{background:#0071e3;}
-.answer-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.answer-row{display:flex;gap:10px;align-items:center;margin-bottom:12px;}
 .answer-row .input{flex:1;}
-.mic-area{border:2px dashed #d2d2d7;border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:background 0.15s,border-color 0.15s;margin-bottom:10px;}
+.mic-area{border:2px dashed #d2d2d7;border-radius:16px;padding:18px;text-align:center;cursor:pointer;transition:background 0.15s,border-color 0.15s;margin-bottom:12px;}
 .mic-area:hover{background:#f5f5f7;}
 .mic-area.on{border-color:#0071e3;background:#e1f0ff;}
-.mic-icon{font-size:28px;margin-bottom:4px;}
-.mic-lbl{font-size:13px;color:#6e6e73;}
-.transcript{font-size:14px;color:#1d1d1f;margin-top:6px;min-height:18px;}
-.result{padding:14px 16px;border-radius:12px;margin-bottom:10px;font-size:14px;line-height:1.7;display:none;}
+.mic-icon{font-size:36px;margin-bottom:6px;}
+.mic-lbl{font-size:16px;color:#6e6e73;}
+.transcript{font-size:16px;color:#1d1d1f;margin-top:8px;min-height:20px;}
+.result{padding:16px 18px;border-radius:14px;margin-bottom:12px;font-size:16px;line-height:1.8;display:none;}
 .result.ok{background:#e3f5e1;color:#1a4a18;}
 .result.ng{background:#ffeeed;color:#6a1a1a;}
 .result.thinking{background:#f5f5f7;color:#6e6e73;}
-.meaning-display{font-size:20px;font-weight:700;margin:10px 0 6px;line-height:1.4;color:inherit;}
-.score-row{display:flex;gap:12px;font-size:13px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);}
-.score-ok{color:#1a7318;font-weight:600;}
-.score-ng{color:#9b1c1c;font-weight:600;}
-.nav-tabs{display:flex;gap:6px;margin-bottom:10px;}
-.nav-tab{flex:1;padding:8px;text-align:center;font-size:13px;border-radius:10px;cursor:pointer;border:none;background:#e8e8ed;color:#6e6e73;font-weight:500;}
+.meaning-display{font-size:22px;font-weight:700;margin:12px 0 8px;line-height:1.4;color:inherit;}
+.pos-tag{font-size:15px;font-weight:500;opacity:0.75;margin-bottom:4px;}
+.score-row{display:flex;gap:14px;font-size:16px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.08);}
+.score-ok{color:#1a7318;font-weight:700;}
+.score-ng{color:#9b1c1c;font-weight:700;}
+.nav-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.nav-tab{flex:1;padding:10px;text-align:center;font-size:15px;border-radius:12px;cursor:pointer;border:none;background:#e8e8ed;color:#6e6e73;font-weight:600;}
 .nav-tab.active{background:#0071e3;color:#fff;}
-.word-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f0f0f5;gap:8px;}
+.word-row{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid #f0f0f5;gap:8px;}
 .word-row:last-child{border-bottom:none;}
-.prog{font-size:13px;color:#6e6e73;}
-.api-status{font-size:12px;color:#6e6e73;margin-top:6px;}
-.upgrade-badge{display:inline-block;background:#e3f5e1;color:#1a7318;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;margin-top:8px;}
-.back-btn{background:#e8e8ed;color:#1d1d1f;padding:7px 14px;border-radius:10px;border:none;font-size:13px;font-weight:500;cursor:pointer;}
+.prog{font-size:15px;color:#6e6e73;}
+.api-status{font-size:14px;color:#6e6e73;margin-top:6px;}
+.upgrade-badge{display:inline-block;background:#e3f5e1;color:#1a7318;padding:4px 12px;border-radius:14px;font-size:15px;font-weight:700;margin-top:10px;}
+.back-btn{background:#e8e8ed;color:#1d1d1f;padding:9px 16px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer;}
 .back-btn:active{transform:scale(0.97);}
-.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-.search{margin-bottom:10px;}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.search{margin-bottom:12px;}
 .word-list-wrap{max-height:55vh;overflow-y:auto;}
-.sound-toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:#6e6e73;}
-.toggle-switch{position:relative;width:40px;height:22px;cursor:pointer;}
+.sound-toggle{display:flex;align-items:center;gap:8px;font-size:15px;color:#6e6e73;}
+.toggle-switch{position:relative;width:44px;height:26px;cursor:pointer;}
 .toggle-switch input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:#d2d2d7;border-radius:22px;transition:background 0.2s;}
-.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:#fff;border-radius:50%;transition:transform 0.2s;}
+.toggle-slider{position:absolute;inset:0;background:#d2d2d7;border-radius:26px;transition:background 0.2s;}
+.toggle-slider:before{content:'';position:absolute;width:22px;height:22px;left:2px;top:2px;background:#fff;border-radius:50%;transition:transform 0.2s;}
 .toggle-switch input:checked+.toggle-slider{background:#0071e3;}
 .toggle-switch input:checked+.toggle-slider:before{transform:translateX(18px);}
 </style>
@@ -87,7 +88,7 @@ h1{font-size:20px;font-weight:600;text-align:center;padding:12px 0 4px;}
 
 <!-- HOME -->
 <div class="screen active" id="s-home">
-  <h1>英単語トレーナー <span style="font-size:13px;font-weight:500;color:#6e6e73;">v1.1</span></h1>
+  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v1.6</span></h1>
   <p class="subtitle">音声・テキスト両対応 / レベル管理</p>
 
   <div class="stat-grid">
@@ -131,15 +132,17 @@ h1{font-size:20px;font-weight:600;text-align:center;padding:12px 0 4px;}
   </div>
 
   <div class="card" style="text-align:center;">
+    <div style="display:flex;justify-content:center;gap:16px;margin-bottom:4px;">
+      <span id="q-ok-count" style="font-size:15px;color:#1a7318;font-weight:700;"></span>
+      <span id="q-ng-count" style="font-size:15px;color:#9b1c1c;font-weight:700;"></span>
+    </div>
+    <div style="margin-bottom:6px;">
+      <span id="q-streak-info" style="font-size:15px;color:#0071e3;font-weight:700;"></span>
+    </div>
     <div><span class="cat-tag" id="q-cat"></span></div>
     <div class="word-display" id="q-word">—</div>
     <div class="streak-row">
       <button class="btn-icon" onclick="speak()" title="読み上げ">🔊</button>
-      <div class="dots">
-        <div class="dot" id="d0"></div>
-        <div class="dot" id="d1"></div>
-        <div class="dot" id="d2"></div>
-      </div>
     </div>
   </div>
 
@@ -345,6 +348,10 @@ function showQ(){
   document.getElementById('q-word').textContent=q.w;
   document.getElementById('q-cat').textContent=q.c||'';
   document.getElementById('q-prog').textContent=(qIdx+1)+'/'+quizPool.length;
+  const okC=q.totalOk||0; const ngC=q.totalNg||0; const st=q.streak||0;
+  document.getElementById('q-ok-count').textContent='🎉 '+okC+'回';
+  document.getElementById('q-ng-count').textContent='💦 '+ngC+'回';
+  document.getElementById('q-streak-info').textContent='🔥 連続'+st+'回正解中！';
   updateDots(q.streak||0);
   document.getElementById('result-box').style.display='none';
   document.getElementById('result-box').className='result thinking';
@@ -356,7 +363,7 @@ function showQ(){
   document.getElementById('mic-area').classList.remove('on');
   isListening=false;transcript='';
 }
-function updateDots(n){for(let i=0;i<3;i++)document.getElementById('d'+i).className='dot'+(i<n?' on':'');}
+function updateDots(n){}
 function speak(){
   const q=quizPool[qIdx];if(!q)return;
   const u=new SpeechSynthesisUtterance(q.w);u.lang='en-US';u.rate=0.85;
@@ -399,14 +406,23 @@ async function judge(ans){
     const dbEntry=db.find(d=>d.id===q.id);
     let up='';
     if(dbEntry){
-      if(ok){dbEntry.streak=(dbEntry.streak||0)+1;if(dbEntry.streak>=3&&dbEntry.lv===1){dbEntry.lv=2;dbEntry.streak=0;up='<br><span class="upgrade-badge">🎉 レベル2に昇格！</span>';}}
-      else{dbEntry.streak=0;}
+      if(ok){
+        dbEntry.streak=(dbEntry.streak||0)+1;
+        dbEntry.totalOk=(dbEntry.totalOk||0)+1;
+        if(dbEntry.streak>=3&&dbEntry.lv===1){dbEntry.lv=2;dbEntry.streak=0;up='<br><span class="upgrade-badge">🎉 レベル2に昇格！</span>';}
+      } else {
+        dbEntry.streak=0;
+        dbEntry.totalNg=(dbEntry.totalNg||0)+1;
+      }
       q.streak=dbEntry.streak;
+      q.totalOk=dbEntry.totalOk||0;
+      q.totalNg=dbEntry.totalNg||0;
       saveDB();updateStats();updateDots(dbEntry.streak);
     }
     rb.innerHTML=
       '<strong>'+(ok?'✓ 正解！':'✗ 不正解')+'</strong><br>'+
       parsed.comment+
+      '<div class="pos-tag">［'+q.c+'］</div>'+
       '<div class="meaning-display">📖 '+q.m+'</div>'+
       up+
       '<div class="score-row">'+
@@ -440,12 +456,13 @@ function renderList(){
   if(!f.length){el.innerHTML='<div class="muted" style="padding:12px;text-align:center;">該当なし</div>';return;}
   el.innerHTML=f.map(d=>`<div class="word-row">
     <div style="flex:1;min-width:0;">
-      <div style="font-size:14px;font-weight:600;">${d.w}</div>
-      <div class="muted" style="font-size:12px;line-height:1.4;">${d.m}</div>
+      <div style="font-size:16px;font-weight:700;">${d.w}</div>
+      <div style="font-size:13px;color:#6e6e73;">［${d.c}］</div>
+      <div class="muted" style="font-size:14px;line-height:1.4;">${d.m}</div>
     </div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
-      ${d.lv===1?`<div class="dots">${[0,1,2].map(i=>`<div class="dot${i<(d.streak||0)?' on':''}"></div>`).join('')}</div>`:'<span class="badge badge-lv2" style="font-size:10px;">定着</span>'}
-      <button style="background:#ffeeed;border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;" onclick="delWord(${d.id})">🗑</button>
+      ${d.lv===1?`<div class="dots">${[0,1,2].map(i=>`<div class="dot${i<(d.streak||0)?' on':''}"></div>`).join('')}</div>`:'<span class="badge badge-lv2" style="font-size:12px;">定着</span>'}
+      <button style="background:#ffeeed;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="delWord(${d.id})">🗑</button>
     </div>
   </div>`).join('');
 }
