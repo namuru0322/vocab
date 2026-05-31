@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>英単語トレーナー</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;}
+.app{max-width:430px;margin:0 auto;padding:12px;}
+.screen{display:none;}
+.screen.active{display:block;}
+h1{font-size:20px;font-weight:600;text-align:center;padding:12px 0 4px;}
+.subtitle{font-size:13px;color:#6e6e73;text-align:center;margin-bottom:14px;}
+.card{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;text-align:center;transition:opacity 0.15s,transform 0.1s;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:#0071e3;color:#fff;}
+.btn-primary:hover{opacity:0.9;}
+.btn-secondary{background:#e8e8ed;color:#1d1d1f;}
+.btn-secondary:hover{background:#d8d8de;}
+.btn-sm{padding:8px 14px;font-size:13px;width:auto;display:inline-block;border-radius:10px;border:none;cursor:pointer;font-weight:500;}
+.btn-icon{width:38px;height:38px;border-radius:10px;border:none;background:#e8e8ed;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:18px;}
+.btn-icon:hover{background:#d8d8de;}
+.input{width:100%;padding:10px 12px;border:1px solid #d2d2d7;border-radius:10px;font-size:15px;background:#fff;color:#1d1d1f;outline:none;}
+.input:focus{border-color:#0071e3;}
+.label{font-size:12px;color:#6e6e73;margin-bottom:5px;}
+.muted{color:#6e6e73;font-size:13px;}
+.badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+.badge-lv1{background:#e1f0ff;color:#0051a8;}
+.badge-lv2{background:#e3f5e1;color:#1a7318;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat-box{border-radius:12px;padding:10px;text-align:center;}
+.stat-box .num{font-size:22px;font-weight:600;}
+.stat-box .lbl{font-size:11px;margin-top:2px;}
+.stat-total{background:#f5f5f7;}
+.stat-lv1{background:#e1f0ff;color:#0051a8;}
+.stat-lv2{background:#e3f5e1;color:#1a7318;}
+.btn-row{display:flex;gap:8px;margin-bottom:8px;}
+.btn-row .btn{flex:1;}
+.word-display{font-size:26px;font-weight:600;text-align:center;padding:18px 8px 10px;line-height:1.3;color:#1d1d1f;}
+.cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f5f5f7;color:#6e6e73;margin-bottom:6px;}
+.streak-row{display:flex;justify-content:center;align-items:center;gap:14px;padding:6px 0;}
+.dots{display:flex;gap:5px;}
+.dot{width:10px;height:10px;border-radius:50%;background:#d2d2d7;}
+.dot.on{background:#0071e3;}
+.answer-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.answer-row .input{flex:1;}
+.mic-area{border:2px dashed #d2d2d7;border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:background 0.15s,border-color 0.15s;margin-bottom:10px;}
+.mic-area:hover{background:#f5f5f7;}
+.mic-area.on{border-color:#0071e3;background:#e1f0ff;}
+.mic-icon{font-size:28px;margin-bottom:4px;}
+.mic-lbl{font-size:13px;color:#6e6e73;}
+.transcript{font-size:14px;color:#1d1d1f;margin-top:6px;min-height:18px;}
+.result{padding:12px 14px;border-radius:12px;margin-bottom:10px;font-size:14px;line-height:1.6;display:none;}
+.result.ok{background:#e3f5e1;color:#1a4a18;}
+.result.ng{background:#ffeeed;color:#6a1a1a;}
+.result.thinking{background:#f5f5f7;color:#6e6e73;}
+.nav-tabs{display:flex;gap:6px;margin-bottom:10px;}
+.nav-tab{flex:1;padding:8px;text-align:center;font-size:13px;border-radius:10px;cursor:pointer;border:none;background:#e8e8ed;color:#6e6e73;font-weight:500;}
+.nav-tab.active{background:#0071e3;color:#fff;}
+.word-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f0f0f5;gap:8px;}
+.word-row:last-child{border-bottom:none;}
+.prog{font-size:13px;color:#6e6e73;}
+.api-status{font-size:12px;color:#6e6e73;margin-top:6px;}
+.upgrade-badge{display:inline-block;background:#e3f5e1;color:#1a7318;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;margin-top:8px;}
+.back-btn{background:#e8e8ed;color:#1d1d1f;padding:7px 14px;border-radius:10px;border:none;font-size:13px;font-weight:500;cursor:pointer;}
+.back-btn:active{transform:scale(0.97);}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.search{margin-bottom:10px;}
+.word-list-wrap{max-height:55vh;overflow-y:auto;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HOME -->
+<div class="screen active" id="s-home">
+  <h1>英単語トレーナー</h1>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理</p>
+
+  <div class="stat-grid">
+    <div class="stat-box stat-total"><div class="num" id="st-total">0</div><div class="lbl" style="color:#6e6e73;">総単語数</div></div>
+    <div class="stat-box stat-lv1"><div class="num" id="st-lv1">0</div><div class="lbl">レベル1</div></div>
+    <div class="stat-box stat-lv2"><div class="num" id="st-lv2">0</div><div class="lbl">レベル2</div></div>
+  </div>
+
+  <div class="card">
+    <div class="label">OpenAI APIキー（初回のみ）</div>
+    <input type="password" class="input" id="api-input" placeholder="sk-..." style="margin-bottom:8px;">
+    <button class="btn-sm btn-primary" onclick="saveKey()">保存</button>
+    <div class="api-status" id="key-st"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="startQuiz('lv1')">▶ レベル1 出題</button>
+    <button class="btn btn-secondary" onclick="startQuiz('lv2')">★ レベル2 出題</button>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="go('s-words')">単語一覧</button>
+    <button class="btn btn-secondary" onclick="go('s-add')">単語を追加</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div class="screen" id="s-quiz">
+  <div class="top-bar">
+    <button class="back-btn" onclick="go('s-home')">← ホーム</button>
+    <span id="q-badge"></span>
+    <span class="prog" id="q-prog"></span>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div><span class="cat-tag" id="q-cat"></span></div>
+    <div class="word-display" id="q-word">—</div>
+    <div class="streak-row">
+      <button class="btn-icon" onclick="speak()" title="読み上げ">🔊</button>
+      <div class="dots">
+        <div class="dot" id="d0"></div>
+        <div class="dot" id="d1"></div>
+        <div class="dot" id="d2"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="answer-row">
+    <input type="text" class="input" id="txt-ans" placeholder="意味を日本語で入力..." onkeydown="if(event.key==='Enter')judgeText()">
+    <button class="btn-icon" onclick="judgeText()" title="送信">↗</button>
+  </div>
+
+  <div class="mic-area" id="mic-area" onclick="toggleMic()">
+    <div class="mic-icon">🎙</div>
+    <div class="mic-lbl" id="mic-lbl">タップして音声で回答</div>
+    <div class="transcript" id="transcript"></div>
+  </div>
+
+  <div class="result thinking" id="result-box"></div>
+
+  <div class="btn-row" style="margin-top:4px;">
+    <button class="btn btn-primary" id="next-btn" onclick="nextWord()" style="display:none;">次の単語 →</button>
+    <button class="btn-sm btn-secondary" id="hint-btn" onclick="showHint()" style="display:none;">ヒント</button>
+  </div>
+</div>
+
+<!-- WORDS -->
+<div class="screen" id="s-words">
+  <div class="top-bar">
+    <button class="back-btn" onclick="go('s-home')">← ホーム</button>
+    <span style="font-weight:600;">単語一覧</span>
+    <span class="muted" id="wcount"></span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="wtab-lv1" onclick="switchTab('lv1')">レベル1 学習中</button>
+    <button class="nav-tab" id="wtab-lv2" onclick="switchTab('lv2')">レベル2 定着済み</button>
+  </div>
+  <div class="search">
+    <input type="text" class="input" id="search" placeholder="🔍 検索..." oninput="renderList()">
+  </div>
+  <div class="card word-list-wrap">
+    <div id="word-list"></div>
+  </div>
+</div>
+
+<!-- ADD -->
+<div class="screen" id="s-add">
+  <div class="top-bar">
+    <button class="back-btn" onclick="go('s-home')">← ホーム</button>
+    <span style="font-weight:600;">単語を追加</span>
+    <span></span>
+  </div>
+  <div class="card">
+    <div class="label">単語・熟語・フレーズ</div>
+    <input type="text" class="input" id="new-w" placeholder="例: get up" style="margin-bottom:10px;">
+    <div class="label">意味・解説</div>
+    <input type="text" class="input" id="new-m" placeholder="例: 起きる" style="margin-bottom:10px;">
+    <div class="label">カテゴリ（任意）</div>
+    <input type="text" class="input" id="new-c" placeholder="例: 句動詞、形容詞" style="margin-bottom:12px;">
+    <button class="btn btn-primary" onclick="addWord()">＋ 追加する</button>
+    <div id="add-st" class="muted" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const WORDS=[
+  {w:"get up",m:"起きる",c:"句動詞"},{w:"get on",m:"乗り込む",c:"句動詞"},{w:"get to",m:"到着する（自分や人が）",c:"句動詞"},{w:"get in",m:"中に入る、到着する（乗り物が到着）",c:"句動詞"},{w:"get into ~",m:"〜にハマっている、のめり込んでいる",c:"句動詞"},{w:"get out of ~",m:"立ち去る、〜から出る",c:"句動詞"},{w:"get off",m:"降りる、乗り捨てる",c:"句動詞"},{w:"get down to ~",m:"本気で〜に取り組む",c:"句動詞"},{w:"get A for B",m:"AをBに買ってあげる、用意してあげる",c:"句動詞"},
+  {w:"put on",m:"着る",c:"句動詞"},{w:"put off",m:"延期する",c:"句動詞"},{w:"put A into B",m:"AをBの中に入れる、努力・エネルギー・時間を注ぎ込む",c:"句動詞"},
+  {w:"feel like ~ing",m:"〜したい気分",c:"句動詞"},{w:"go out",m:"外に出る、外出する",c:"句動詞"},{w:"go on",m:"続ける",c:"句動詞"},
+  {w:"come for ~",m:"〜のために来た",c:"句動詞"},{w:"come in",m:"入る",c:"句動詞"},{w:"come up",m:"思いつく",c:"句動詞"},
+  {w:"stay in",m:"そこに留まる",c:"句動詞"},{w:"stay up",m:"夜更かしする",c:"句動詞"},
+  {w:"speak off the cuff",m:"即興で話す、アドリブで話す",c:"句動詞"},{w:"speak up",m:"ハッキリ言う、大きな声で言う",c:"句動詞"},
+  {w:"bring up",m:"持ち出す、育てる",c:"句動詞"},{w:"bring out",m:"引き出す",c:"句動詞"},{w:"bring back",m:"持ち帰る、思い出させる",c:"句動詞"},{w:"bring it",m:"持って来る",c:"句動詞"},
+  {w:"turn on",m:"つける、オンする",c:"句動詞"},{w:"turn off",m:"消す、オフする",c:"句動詞"},{w:"turn up",m:"上げる、上に折り返す",c:"句動詞"},{w:"turn down",m:"下げる、下に折り返す",c:"句動詞"},{w:"turn in",m:"提出する、寝る",c:"句動詞"},{w:"turn out",m:"（結果的に）〜になった",c:"句動詞"},
+  {w:"take on",m:"引き受ける",c:"句動詞"},{w:"take off",m:"脱ぐ、離陸する",c:"句動詞"},{w:"take out",m:"取り出す",c:"句動詞"},{w:"take along",m:"持って行く、連れていく",c:"句動詞"},{w:"take up ~",m:"〜を占有する（場所、時間）",c:"句動詞"},{w:"take in ~",m:"何かを取り込む、状況を理解する、受け入れる",c:"句動詞"},{w:"take down ~",m:"下ろす、書き留める",c:"句動詞"},{w:"take a day off",m:"仕事を休む",c:"句動詞"},
+  {w:"talk over with ~",m:"〜と話し合う、〜と相談する",c:"句動詞"},
+  {w:"try for ~",m:"〜に向けて一生懸命頑張っている",c:"句動詞"},{w:"try on ~",m:"〜を試着する",c:"句動詞"},{w:"try out ~",m:"〜を試す",c:"句動詞"},
+  {w:"tell ~ apart",m:"〜を見分ける",c:"句動詞"},
+  {w:"think about ~",m:"〜について考える",c:"句動詞"},{w:"think over ~",m:"〜をじっくり考える",c:"句動詞"},{w:"think up ~",m:"〜を考え出す",c:"句動詞"},
+  {w:"keep on ~ing",m:"〜をし続ける",c:"句動詞"},{w:"keep up with ~",m:"〜を維持し続ける",c:"句動詞"},
+  {w:"meet up with ~",m:"〜と待ち合わせる",c:"句動詞"},
+  {w:"make up for ~",m:"〜の埋め合わせをする、取り戻す",c:"句動詞"},{w:"make out",m:"理解する、判別する",c:"句動詞"},{w:"make clear",m:"ハッキリ明確にする",c:"句動詞"},{w:"make sense",m:"筋が通っている、理にかなっている",c:"句動詞"},
+  {w:"look for ~",m:"〜を探す",c:"句動詞"},{w:"looks good",m:"似合う、良いね",c:"句動詞"},
+  {w:"stop by",m:"気軽にちょっと立ち寄る",c:"句動詞"},{w:"tidy up",m:"片付ける、整頓する",c:"句動詞"},{w:"fill out",m:"書類に記入する、必要事項を書き込む",c:"句動詞"},{w:"throw away",m:"捨てる",c:"句動詞"},
+  {w:"avoid",m:"避ける、回避する、防ぐ",c:"動詞"},{w:"assemble",m:"組み立てる、集める",c:"動詞"},{w:"attend",m:"参加する、案内する、世話する",c:"動詞"},{w:"add",m:"追加する",c:"動詞"},{w:"appreciate",m:"感謝する、評価する",c:"動詞"},{w:"agree",m:"賛成する",c:"動詞"},{w:"accept",m:"受け入れる",c:"動詞"},{w:"apologize",m:"謝罪する",c:"動詞"},{w:"affect",m:"影響を与える",c:"動詞"},{w:"approve",m:"承認する、OKする",c:"動詞"},{w:"address",m:"（問題などに）対処する、取り組む",c:"動詞"},{w:"acknowledge",m:"認める",c:"動詞"},{w:"aim",m:"目指す、狙う",c:"動詞"},
+  {w:"celebrate",m:"お祝いをする",c:"動詞"},{w:"complain",m:"不満を口にする、訴える",c:"動詞"},{w:"confirm",m:"確認する、確定する",c:"動詞"},{w:"contribute",m:"貢献する",c:"動詞"},{w:"complicate",m:"複雑にする",c:"動詞"},{w:"contact",m:"連絡する",c:"動詞"},{w:"calculate",m:"計算する",c:"動詞"},{w:"consider",m:"検討する",c:"動詞"},
+  {w:"decide",m:"決断する、決める",c:"動詞"},{w:"discuss",m:"話し合う",c:"動詞"},{w:"describe",m:"説明する",c:"動詞"},{w:"disappoint",m:"がっかりさせる",c:"動詞"},
+  {w:"expect",m:"期待する",c:"動詞"},{w:"explain",m:"説明する",c:"動詞"},{w:"exceed",m:"〜を超える（ある基準）",c:"動詞"},{w:"express",m:"表現する",c:"動詞"},{w:"extend",m:"広げる、手を伸ばす、期限を延長する",c:"動詞"},{w:"expire",m:"期限が切れる",c:"動詞"},
+  {w:"follow",m:"従う、ついて行く、たどる",c:"動詞"},{w:"fill",m:"満たす、埋める",c:"動詞"},
+  {w:"grow",m:"育てる（物やスキル）",c:"動詞"},{w:"guess",m:"推測する（たぶん〜だと思う）",c:"動詞"},
+  {w:"happen",m:"起きる",c:"動詞"},{w:"hire",m:"雇用する",c:"動詞"},
+  {w:"improve",m:"上達する",c:"動詞"},{w:"include",m:"含む",c:"動詞"},{w:"instruct",m:"指示する",c:"動詞"},{w:"inform",m:"伝える（情報、状況を）",c:"動詞"},
+  {w:"laugh",m:"笑う",c:"動詞"},{w:"leave",m:"離れる、出発する、置いて行く",c:"動詞"},
+  {w:"maintain",m:"維持する",c:"動詞"},{w:"manage",m:"管理する",c:"動詞"},{w:"measure",m:"計測する",c:"動詞"},{w:"move",m:"動く、移動する、感動する（受動態で）",c:"動詞"},{w:"miss",m:"逃す、損なう",c:"動詞"},
+  {w:"note",m:"書き留める、気に留める",c:"動詞"},
+  {w:"quit",m:"辞める、止める、あきらめる",c:"動詞"},
+  {w:"realize",m:"気づく、理解する",c:"動詞"},{w:"receive",m:"受ける",c:"動詞"},{w:"reduce",m:"減らす、少なくする",c:"動詞"},{w:"reject",m:"拒否する",c:"動詞"},{w:"remove",m:"取り除く",c:"動詞"},{w:"renew",m:"更新する",c:"動詞"},{w:"reply to",m:"返事をする、応答する",c:"動詞"},{w:"rest",m:"休む",c:"動詞"},{w:"revise",m:"修正する",c:"動詞"},
+  {w:"schedule",m:"予定を立てる、計画に組み込む",c:"動詞"},{w:"share",m:"共有する",c:"動詞"},{w:"solve",m:"解決する、問題を解く",c:"動詞"},{w:"spend",m:"（お金を）使う、費やす、（時を）過ごす",c:"動詞"},{w:"spot",m:"見つける（パッと目に入って）",c:"動詞"},{w:"struggle",m:"苦戦する、葛藤する、必死に取り組む",c:"動詞"},{w:"submit",m:"提出する",c:"動詞"},{w:"succeed",m:"成功する",c:"動詞"},{w:"support",m:"支持する、サポートする",c:"動詞"},{w:"switch",m:"交換する",c:"動詞"},
+  {w:"trade",m:"交換する",c:"動詞"},{w:"value",m:"評価する、価値を認める",c:"動詞"},{w:"verify",m:"本人確認等の確認作業をする",c:"動詞"},{w:"waste",m:"〜を無駄にする、浪費する",c:"動詞"},
+  {w:"available",m:"利用可能、利用できる、対応できる",c:"形容詞"},{w:"additional",m:"追加の",c:"形容詞"},{w:"comfortable",m:"居心地の良い、快適な",c:"形容詞"},{w:"complex",m:"複雑、複雑な",c:"形容詞"},{w:"disappointed",m:"がっかりした",c:"形容詞"},{w:"exclusive",m:"専属の、限定の、独占の",c:"形容詞"},{w:"familiar",m:"よく知っている、親しい、見聞きし慣れた",c:"形容詞"},{w:"honest",m:"誠実な",c:"形容詞"},{w:"impossible",m:"不可能な",c:"形容詞"},{w:"incredible",m:"信じられない",c:"形容詞"},{w:"meaningful",m:"意味がある、有意義な",c:"形容詞"},{w:"possible",m:"可能な",c:"形容詞"},{w:"precise",m:"正確な",c:"形容詞"},{w:"previous",m:"ひとつ前の",c:"形容詞"},{w:"reasonable",m:"安目の、合理的な",c:"形容詞"},{w:"realistic",m:"現実的である",c:"形容詞"},{w:"spacious",m:"広々としている",c:"形容詞"},{w:"traditional",m:"伝統的な",c:"形容詞"},{w:"typical",m:"典型的な",c:"形容詞"},{w:"unknown",m:"不明、未知の",c:"形容詞"},
+  {w:"achievement",m:"功績、達成",c:"名詞"},{w:"addition",m:"追加",c:"名詞"},{w:"apology",m:"謝罪",c:"名詞"},{w:"approval",m:"承認",c:"名詞"},{w:"assembly",m:"組立て、集会",c:"名詞"},{w:"biography",m:"生い立ち（人生全般）",c:"名詞"},{w:"cause",m:"原因",c:"名詞"},{w:"charm",m:"魅力",c:"名詞"},{w:"decision",m:"決断、決定",c:"名詞"},{w:"delay",m:"遅れ",c:"名詞"},{w:"description",m:"説明",c:"名詞"},{w:"discussion",m:"議論、話し合い",c:"名詞"},{w:"effect",m:"影響",c:"名詞"},{w:"effort",m:"努力",c:"名詞"},{w:"expectation",m:"期待、予測",c:"名詞"},{w:"experience",m:"経験",c:"名詞"},{w:"explanation",m:"説明",c:"名詞"},{w:"factor",m:"要素",c:"名詞"},{w:"influence",m:"影響",c:"名詞"},{w:"integration",m:"統合、連携",c:"名詞"},{w:"laughter",m:"笑い、笑い声",c:"名詞"},{w:"motivation",m:"やる気",c:"名詞"},{w:"opportunity",m:"機会、チャンス",c:"名詞"},{w:"opinion",m:"意見",c:"名詞"},{w:"option",m:"選択肢",c:"名詞"},{w:"procedure",m:"手順",c:"名詞"},{w:"proposal",m:"提案",c:"名詞"},{w:"result",m:"結果",c:"名詞"},{w:"scenery",m:"景色（広義）",c:"名詞"},{w:"scam",m:"詐欺",c:"名詞"},{w:"smash",m:"大ヒット、大成功（勢いあるニュアンス）",c:"名詞"},{w:"society",m:"社会",c:"名詞"},{w:"sore throat",m:"喉の痛み",c:"名詞"},{w:"standard",m:"基準、標準",c:"名詞"},{w:"structure",m:"構造",c:"名詞"},{w:"the souvenir",m:"お土産",c:"名詞"},{w:"the traffic jam",m:"渋滞",c:"名詞"},{w:"trash",m:"ゴミ",c:"名詞"},{w:"upbringing",m:"生い立ち（幼少期や過ごしてきた環境や教育）",c:"名詞"},{w:"verification",m:"本人確認、情報確認",c:"名詞"},{w:"vibrato",m:"ビブラート（バイブラートと発音）",c:"名詞"},{w:"view",m:"景色（具体的に見えている景色）",c:"名詞"},
+  {w:"above",m:"〜より上に",c:"前置詞"},{w:"along ~",m:"〜に沿って、一緒に",c:"前置詞"},{w:"below ~",m:"〜の下に",c:"前置詞"},{w:"beyond",m:"〜を超えて",c:"前置詞"},{w:"during",m:"〜の間",c:"前置詞"},{w:"until",m:"〜まで",c:"前置詞"},
+  {w:"carefully",m:"注意深く、丁寧に",c:"副詞"},{w:"currently",m:"今現在",c:"副詞"},{w:"definitely",m:"絶対に、間違いなく、確かに",c:"副詞"},{w:"immediately",m:"早く、早急に",c:"副詞"},{w:"precisely",m:"正確に",c:"副詞"},{w:"probably",m:"おそらく（それよりは確実）",c:"副詞"},{w:"perhaps / maybe",m:"おそらく（かなり不確実）",c:"副詞"},{w:"recently",m:"最近",c:"副詞"},{w:"sincerely",m:"しっかりと",c:"副詞"},{w:"somewhere",m:"〜の場所、どこかの場所",c:"副詞"},{w:"soon",m:"すぐに、まもなく",c:"副詞"},{w:"strongly",m:"強く",c:"副詞"},{w:"anymore",m:"もう〜しない（否定文で）",c:"副詞"},
+  {w:"above all",m:"何よりも優先して、何よりもまず",c:"熟語"},{w:"a lot of ~",m:"たくさんの〜",c:"熟語"},{w:"amount of ~",m:"〜の量、〜の額",c:"熟語"},{w:"as A as B",m:"BとAと同じくらいAだ",c:"熟語"},{w:"as soon as",m:"〜するとすぐに",c:"熟語"},{w:"ASAP",m:"As Soon As Possible、できるだけ早く",c:"熟語"},{w:"be able to",m:"〜できる、〜できるようになる",c:"熟語"},{w:"be grateful",m:"感謝している",c:"熟語"},{w:"be part of ~",m:"〜の一部である、〜に属している",c:"熟語"},{w:"be proud of ~",m:"〜を誇りに思う",c:"熟語"},{w:"be satisfied",m:"満足している",c:"熟語"},{w:"be useful",m:"役に立つ",c:"熟語"},{w:"better than ~",m:"〜より良い",c:"熟語"},{w:"by accident",m:"（ネガティブな）偶然",c:"熟語"},{w:"by chance",m:"（ポジティブな）偶然",c:"熟語"},{w:"check it out",m:"チェックする、確認する、見てみる",c:"熟語"},{w:"due to",m:"〜が原因、〜によって",c:"熟語"},{w:"even more",m:"今よりもっと",c:"熟語"},{w:"I care about ~",m:"〜に気を配っている、大切に思っている",c:"熟語"},{w:"in front of ~",m:"〜の前で",c:"熟語"},{w:"in the future",m:"今後",c:"熟語"},{w:"it's about time to ~",m:"そろそろ〜する時間",c:"熟語"},{w:"make an effort",m:"努力する",c:"熟語"},{w:"most of the ~",m:"〜の大部分、〜のほとんど",c:"熟語"},{w:"a nearby ~",m:"近くの〜",c:"熟語"},{w:"once a week",m:"週に一回",c:"熟語"},{w:"prefer A to B",m:"BよりAが好き",c:"熟語"},{w:"something new",m:"何か新しい事",c:"熟語"},{w:"the old days",m:"昔、記憶",c:"熟語"},{w:"three times a week",m:"週に三回",c:"熟語"},{w:"too much / too many",m:"〜し過ぎている、多すぎる",c:"熟語"},{w:"twice a week",m:"週に二回",c:"熟語"},{w:"while",m:"〜のあいだ、〜しながら / だけど（逆・対比）",c:"熟語"},{w:"without giving up",m:"諦めない",c:"熟語"},
+  {w:"you nailed it",m:"バッチリ成功した！完璧にできた！",c:"フレーズ"},{w:"that's spot on",m:"その通り、ぴったり正しい",c:"フレーズ"},{w:"let's keep it rolling",m:"その勢い維持していこう！",c:"フレーズ"},{w:"What does '~' mean?",m:"〜は何て意味？",c:"フレーズ"},{w:"How do you spell '~'?",m:"〜のスペルって何？",c:"フレーズ"},{w:"I've never heard of that before",m:"初めて聞いた！",c:"フレーズ"},{w:"Please tell me the difference between A and B",m:"AとBの違いを教えて",c:"フレーズ"},{w:"Go ahead",m:"どうぞ、次に行って下さい",c:"フレーズ"},{w:"I made a mistake. I'll try again.",m:"あ、間違った。もう一度やります",c:"フレーズ"}
+];
+
+let db=[],apiKey='',quizPool=[],qIdx=0,qMode='lv1',rec=null,isListening=false,transcript='',wTab='lv1';
+
+function initDB(){
+  const s=localStorage.getItem('vt_db');
+  if(s){
+    db=JSON.parse(s);
+    WORDS.forEach(w=>{if(!db.find(d=>d.w===w.w))db.push({...w,lv:1,streak:0,id:Date.now()+Math.random()});});
+  } else {
+    db=WORDS.map((w,i)=>({...w,lv:1,streak:0,id:i+1}));
+  }
+  const k=localStorage.getItem('vt_key');
+  if(k){apiKey=k;document.getElementById('api-input').value=k;document.getElementById('key-st').textContent='✓ APIキー設定済み';}
+  saveDB();updateStats();
+}
+function saveDB(){localStorage.setItem('vt_db',JSON.stringify(db));}
+function updateStats(){
+  document.getElementById('st-total').textContent=db.length;
+  document.getElementById('st-lv1').textContent=db.filter(d=>d.lv===1).length;
+  document.getElementById('st-lv2').textContent=db.filter(d=>d.lv===2).length;
+}
+function saveKey(){
+  const v=document.getElementById('api-input').value.trim();
+  if(!v.startsWith('sk-')){document.getElementById('key-st').textContent='sk- で始まるキーを入力してください';return;}
+  apiKey=v;localStorage.setItem('vt_key',v);document.getElementById('key-st').textContent='✓ 保存しました';
+}
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='s-words')renderList();
+}
+function startQuiz(mode){
+  if(!apiKey){alert('先にAPIキーを入力・保存してください');return;}
+  const pool=db.filter(d=>d.lv===(mode==='lv1'?1:2));
+  if(!pool.length){alert(mode==='lv1'?'レベル1の単語がありません':'レベル2はまだありません。レベル1で3回連続正解すると昇格します');return;}
+  qMode=mode;quizPool=shuffle([...pool]).slice(0,Math.min(15,pool.length));qIdx=0;
+  go('s-quiz');
+  document.getElementById('q-badge').innerHTML=mode==='lv1'?'<span class="badge badge-lv1">レベル1</span>':'<span class="badge badge-lv2">レベル2</span>';
+  showQ();
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function showQ(){
+  if(qIdx>=quizPool.length){alert('お疲れ様でした！全問終了です');go('s-home');updateStats();return;}
+  const q=quizPool[qIdx];
+  document.getElementById('q-word').textContent=q.w;
+  document.getElementById('q-cat').textContent=q.c||'';
+  document.getElementById('q-prog').textContent=(qIdx+1)+'/'+quizPool.length;
+  updateDots(q.streak||0);
+  document.getElementById('result-box').style.display='none';
+  document.getElementById('result-box').className='result thinking';
+  document.getElementById('next-btn').style.display='none';
+  document.getElementById('hint-btn').style.display='none';
+  document.getElementById('txt-ans').value='';
+  document.getElementById('transcript').textContent='';
+  document.getElementById('mic-lbl').textContent='タップして音声で回答';
+  document.getElementById('mic-area').classList.remove('on');
+  isListening=false;transcript='';
+}
+function updateDots(n){for(let i=0;i<3;i++)document.getElementById('d'+i).className='dot'+(i<n?' on':'');}
+function speak(){
+  const q=quizPool[qIdx];if(!q)return;
+  const u=new SpeechSynthesisUtterance(q.w);u.lang='en-US';u.rate=0.85;
+  window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
+}
+function toggleMic(){
+  if(isListening){if(rec)rec.stop();return;}
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){alert('iPhoneのSafariで開いてください');return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  rec=new SR();rec.lang='ja-JP';rec.continuous=false;rec.interimResults=true;
+  rec.onstart=()=>{isListening=true;document.getElementById('mic-area').classList.add('on');document.getElementById('mic-lbl').textContent='聞いています... もう一度タップで送信';};
+  rec.onresult=(e)=>{let t='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)transcript+=e.results[i][0].transcript;else t=e.results[i][0].transcript;}document.getElementById('transcript').textContent=transcript||t;};
+  rec.onend=()=>{isListening=false;document.getElementById('mic-area').classList.remove('on');document.getElementById('mic-lbl').textContent='タップして音声で回答';if(transcript.trim())judge(transcript.trim());else document.getElementById('mic-lbl').textContent='聞き取れませんでした。もう一度タップ';};
+  rec.onerror=(e)=>{isListening=false;document.getElementById('mic-area').classList.remove('on');document.getElementById('mic-lbl').textContent='エラー: '+e.error;};
+  rec.start();
+}
+function judgeText(){const v=document.getElementById('txt-ans').value.trim();if(!v)return;judge(v);}
+async function judge(ans){
+  const q=quizPool[qIdx];
+  document.getElementById('result-box').className='result thinking';
+  document.getElementById('result-box').textContent='AIが判定中...';
+  document.getElementById('result-box').style.display='block';
+  document.getElementById('next-btn').style.display='none';
+  document.getElementById('hint-btn').style.display='none';
+  try{
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'gpt-4o-mini',max_tokens:120,messages:[
+        {role:'system',content:'英単語学習の正誤判定AIです。意味が合っていれば正解。完全一致不要。JSONのみ返す: {"result":"correct"または"incorrect","comment":"日本語で一言"}'},
+        {role:'user',content:'単語: '+q.w+'\n正解の意味: '+q.m+'\nユーザーの回答: '+ans}
+      ]})
+    });
+    const data=await res.json();
+    let parsed;
+    try{parsed=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,''));}catch{parsed={result:'incorrect',comment:'判定失敗。正解: '+q.m};}
+    const ok=parsed.result==='correct';
+    const rb=document.getElementById('result-box');
+    rb.className='result '+(ok?'ok':'ng');
+    const dbEntry=db.find(d=>d.id===q.id);
+    let up='';
+    if(dbEntry){
+      if(ok){dbEntry.streak=(dbEntry.streak||0)+1;if(dbEntry.streak>=3&&dbEntry.lv===1){dbEntry.lv=2;dbEntry.streak=0;up='<br><span class="upgrade-badge">🎉 レベル2に昇格！</span>';}}
+      else{dbEntry.streak=0;}
+      q.streak=dbEntry.streak;
+      saveDB();updateStats();updateDots(dbEntry.streak);
+    }
+    rb.innerHTML='<strong>'+(ok?'✓ 正解！':'✗ 不正解')+'</strong><br>'+parsed.comment+up;
+    document.getElementById('next-btn').style.display='block';
+  }catch(e){
+    document.getElementById('result-box').className='result ng';
+    document.getElementById('result-box').textContent='APIエラー: '+e.message;
+    document.getElementById('next-btn').style.display='block';
+  }
+}
+function showHint(){const q=quizPool[qIdx];alert('ヒント: '+q.m.substring(0,Math.ceil(q.m.length/2))+'...');}
+function nextWord(){qIdx++;showQ();}
+function addWord(){
+  const w=document.getElementById('new-w').value.trim();
+  const m=document.getElementById('new-m').value.trim();
+  const c=document.getElementById('new-c').value.trim()||'その他';
+  if(!w||!m){document.getElementById('add-st').textContent='単語と意味を入力してください';return;}
+  db.push({w,m,c,lv:1,streak:0,id:Date.now()});
+  saveDB();updateStats();
+  document.getElementById('new-w').value='';document.getElementById('new-m').value='';document.getElementById('new-c').value='';
+  document.getElementById('add-st').textContent='✓ 追加しました！（合計'+db.length+'語）';
+}
+function renderList(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  const f=db.filter(d=>d.lv===(wTab==='lv1'?1:2)&&(!q||(d.w+d.m).toLowerCase().includes(q)));
+  document.getElementById('wcount').textContent=f.length+'語';
+  const el=document.getElementById('word-list');
+  if(!f.length){el.innerHTML='<div class="muted" style="padding:12px;text-align:center;">該当なし</div>';return;}
+  el.innerHTML=f.map(d=>`<div class="word-row">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:14px;font-weight:600;">${d.w}</div>
+      <div class="muted" style="font-size:12px;line-height:1.4;">${d.m}</div>
+    </div>
+    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
+      ${d.lv===1?`<div class="dots">${[0,1,2].map(i=>`<div class="dot${i<(d.streak||0)?' on':''}"></div>`).join('')}</div>`:'<span class="badge badge-lv2" style="font-size:10px;">定着</span>'}
+      <button style="background:#ffeeed;border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;" onclick="delWord(${d.id})">🗑</button>
+    </div>
+  </div>`).join('');
+}
+function switchTab(t){
+  wTab=t;
+  document.getElementById('wtab-lv1').className='nav-tab'+(t==='lv1'?' active':'');
+  document.getElementById('wtab-lv2').className='nav-tab'+(t==='lv2'?' active':'');
+  renderList();
+}
+function delWord(id){if(!confirm('削除しますか？'))return;db=db.filter(d=>d.id!==id);saveDB();updateStats();renderList();}
+
+initDB();
+</script>
+</body>
+</html>
