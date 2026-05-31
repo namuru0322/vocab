@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>英単語トレーナー v1.8</title>
+<title>英単語トレーナー v2.4</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;font-size:17px;}
@@ -76,6 +76,8 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
 .search{margin-bottom:12px;}
 .word-list-wrap{max-height:55vh;overflow-y:auto;}
 .sound-toggle{display:flex;align-items:center;gap:8px;font-size:15px;color:#6e6e73;}
+.mode-btn{padding:10px 8px;font-size:14px;font-weight:600;border:2px solid #d2d2d7;border-radius:12px;background:#fff;color:#6e6e73;cursor:pointer;text-align:center;transition:all 0.15s;}
+.mode-btn.active{border-color:#0071e3;background:#e1f0ff;color:#0051a8;}
 .toggle-switch{position:relative;width:44px;height:26px;cursor:pointer;}
 .toggle-switch input{opacity:0;width:0;height:0;}
 .toggle-slider{position:absolute;inset:0;background:#d2d2d7;border-radius:26px;transition:background 0.2s;}
@@ -89,7 +91,7 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
 
 <!-- HOME -->
 <div class="screen active" id="s-home">
-  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v1.8</span></h1>
+  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v2.4</span></h1>
   <p class="subtitle">音声・テキスト両対応 / レベル管理</p>
 
   <div class="stat-grid">
@@ -105,6 +107,28 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
     <div class="api-status" id="key-st"></div>
   </div>
 
+  <div class="card">
+    <div class="label" style="margin-bottom:8px;">出題モード</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+      <button class="mode-btn active" id="mode-random" onclick="setMode('random')">🎲 ランダム</button>
+      <button class="mode-btn" id="mode-unlearned" onclick="setMode('unlearned')">🆕 未学習優先</button>
+      <button class="mode-btn" id="mode-weak" onclick="setMode('weak')">💪 苦手優先</button>
+      <button class="mode-btn" id="mode-streak" onclick="setMode('streak')">🔥 連続正解↑</button>
+    </div>
+    <div class="label" style="margin-bottom:6px;">カテゴリ絞り込み（任意）</div>
+    <select class="input" id="cat-filter" style="font-size:15px;">
+      <option value="">すべてのカテゴリ</option>
+      <option value="句動詞">句動詞</option>
+      <option value="動詞">動詞</option>
+      <option value="形容詞">形容詞</option>
+      <option value="名詞">名詞</option>
+      <option value="副詞">副詞</option>
+      <option value="熟語">熟語</option>
+      <option value="フレーズ">フレーズ</option>
+      <option value="前置詞">前置詞</option>
+    </select>
+  </div>
+
   <div class="btn-row">
     <button class="btn btn-primary" onclick="startQuiz('lv1')">▶ レベル1 出題</button>
     <button class="btn btn-secondary" onclick="startQuiz('lv2')">★ レベル2 出題</button>
@@ -118,7 +142,7 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- QUIZ -->
 <div class="screen" id="s-quiz">
   <div class="top-bar">
-    <button class="back-btn" onclick="go('s-home')">← ホーム</button>
+    <button class="back-btn" onclick="stopMic();go('s-home')">← ホーム</button>
     <span id="q-badge"></span>
     <div style="display:flex;align-items:center;gap:8px;">
       <span class="prog" id="q-prog"></span>
@@ -164,7 +188,26 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
   </div>
 </div>
 
-<!-- WORDS -->
+<!-- RESULT SUMMARY -->
+<div class="screen" id="s-result">
+  <div style="text-align:center;padding:10px 0 14px;">
+    <div style="font-size:24px;font-weight:700;">セッション結果</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+    <div style="background:#e3f5e1;border-radius:14px;padding:14px;text-align:center;">
+      <div style="font-size:32px;font-weight:700;color:#1a7318;" id="res-ok">0</div>
+      <div style="font-size:15px;color:#1a7318;margin-top:2px;">🎉 正解</div>
+    </div>
+    <div style="background:#ffeeed;border-radius:14px;padding:14px;text-align:center;">
+      <div style="font-size:32px;font-weight:700;color:#9b1c1c;" id="res-ng">0</div>
+      <div style="font-size:15px;color:#9b1c1c;margin-top:2px;">💦 不正解</div>
+    </div>
+  </div>
+  <div class="card" style="padding:0;">
+    <div id="res-list" style="padding:8px 16px;"></div>
+  </div>
+  <button class="btn btn-primary" style="margin-top:4px;" onclick="go('s-home');updateStats();">ホームに戻る</button>
+</div>
 <div class="screen" id="s-words">
   <div class="top-bar">
     <button class="back-btn" onclick="go('s-home')">← ホーム</button>
@@ -251,6 +294,13 @@ let db=[],apiKey='',quizPool=[],qIdx=0,qMode='lv1',rec=null,isListening=false,tr
 let soundOn=true;
 let sessionOk=0,sessionNg=0;
 let audioCtx=null;
+let quizOrderMode='random';
+
+function setMode(m){
+  quizOrderMode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mode-'+m).classList.add('active');
+}
 
 function getAudioCtx(){
   if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
@@ -329,9 +379,31 @@ function go(id){
 }
 function startQuiz(mode){
   if(!apiKey){alert('先にAPIキーを入力・保存してください');return;}
-  const pool=db.filter(d=>d.lv===(mode==='lv1'?1:2));
-  if(!pool.length){alert(mode==='lv1'?'レベル1の単語がありません':'レベル2はまだありません。レベル1で3回連続正解すると昇格します');return;}
-  qMode=mode;quizPool=shuffle([...pool]).slice(0,Math.min(10,pool.length));qIdx=0;
+  const cat=document.getElementById('cat-filter').value;
+  let pool=db.filter(d=>d.lv===(mode==='lv1'?1:2));
+  if(cat) pool=pool.filter(d=>d.c===cat);
+  if(!pool.length){alert('該当する単語がありません');return;}
+
+  // 出題モードで並び替え
+  if(quizOrderMode==='unlearned'){
+    // 未学習（totalOk+totalNgが0）を優先
+    pool.sort((a,b)=>{
+      const aTotal=(a.totalOk||0)+(a.totalNg||0);
+      const bTotal=(b.totalOk||0)+(b.totalNg||0);
+      return aTotal-bTotal;
+    });
+  } else if(quizOrderMode==='weak'){
+    // 不正解が多い順
+    pool.sort((a,b)=>(b.totalNg||0)-(a.totalNg||0));
+  } else if(quizOrderMode==='streak'){
+    // 連続正解が少ない順
+    pool.sort((a,b)=>(a.streak||0)-(b.streak||0));
+  } else {
+    // ランダム
+    pool=shuffle(pool);
+  }
+
+  qMode=mode;quizPool=pool.slice(0,Math.min(10,pool.length));qIdx=0;
   sessionOk=0;sessionNg=0;
   go('s-quiz');
   document.getElementById('q-badge').innerHTML=mode==='lv1'?'<span class="badge badge-lv1">レベル1</span>':'<span class="badge badge-lv2">レベル2</span>';
@@ -339,9 +411,9 @@ function startQuiz(mode){
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function showQ(){
+  if(isListening&&rec){rec.stop();}
   if(qIdx>=quizPool.length){
-    alert('お疲れ様でした！\n\n🎉 正解: '+sessionOk+'回 / 💦 不正解: '+sessionNg+'回');
-    go('s-home');updateStats();return;
+    showSummary();return;
   }
   const q=quizPool[qIdx];
   document.getElementById('q-word').textContent=q.w;
@@ -399,6 +471,7 @@ async function judge(ans){
     let parsed;
     try{parsed=JSON.parse(data.choices[0].message.content.replace(/```json|```/g,''));}catch{parsed={result:'incorrect',comment:'判定失敗。正解: '+q.m};}
     const ok=parsed.result==='correct';
+    q.sessionResult=ok?'correct':'incorrect';
     if(ok){sessionOk++;playCorrect();}else{sessionNg++;playWrong();}
     const rb=document.getElementById('result-box');
     rb.className='result '+(ok?'ok':'ng');
@@ -424,8 +497,8 @@ async function judge(ans){
       '<div class="meaning-display">📖 '+q.m+'</div>'+
       up+
       '<div class="score-row">'+
-      '<span class="score-ok">🎉 '+sessionOk+'回</span>'+
-      '<span class="score-ng">💦 '+sessionNg+'回</span>'+
+      '<span class="score-ok">🎉 累計'+(q.totalOk||0)+'回</span>'+
+      '<span class="score-ng">💦 累計'+(q.totalNg||0)+'回</span>'+
       '<span class="score-streak">🔥 連続'+(dbEntry?dbEntry.streak||0:0)+'回</span>'+
       '</div>';
     document.getElementById('next-btn').style.display='block';
@@ -435,6 +508,27 @@ async function judge(ans){
     document.getElementById('next-btn').style.display='block';
   }
 }
+function showSummary(){
+  if(isListening&&rec){rec.stop();}
+  document.getElementById('res-ok').textContent=sessionOk+'回';
+  document.getElementById('res-ng').textContent=sessionNg+'回';
+  const list=document.getElementById('res-list');
+  list.innerHTML=quizPool.map(q=>{
+    const ok=q.sessionResult==='correct';
+    return `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f0f0f5;gap:8px;">
+      <div style="flex:1;">
+        <div style="font-size:16px;font-weight:700;">${q.w}</div>
+        <div style="font-size:13px;color:#6e6e73;">${q.m}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="${ok?'color:#1a7318':'color:#9b1c1c'};font-size:16px;font-weight:700;">${ok?'✓ 正解':'✗ 不正解'}</div>
+        <div style="font-size:12px;color:#6e6e73;">🎉${q.totalOk||0} 💦${q.totalNg||0} 🔥${q.streak||0}連続</div>
+      </div>
+    </div>`;
+  }).join('');
+  go('s-result');
+}
+function stopMic(){if(isListening&&rec){rec.stop();isListening=false;}}
 function showHint(){const q=quizPool[qIdx];alert('ヒント: '+q.m.substring(0,Math.ceil(q.m.length/2))+'...');}
 function nextWord(){qIdx++;showQ();}
 function addWord(){
@@ -449,21 +543,58 @@ function addWord(){
 }
 function renderList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
-  const f=db.filter(d=>d.lv===(wTab==='lv1'?1:2)&&(!q||(d.w+d.m).toLowerCase().includes(q)));
+  const targetLv=wTab==='lv1'?1:2;
+  const f=db.filter(d=>d.lv===targetLv&&(!q||(d.w+d.m).toLowerCase().includes(q)));
   document.getElementById('wcount').textContent=f.length+'語';
   const el=document.getElementById('word-list');
   if(!f.length){el.innerHTML='<div class="muted" style="padding:12px;text-align:center;">該当なし</div>';return;}
-  el.innerHTML=f.map(d=>`<div class="word-row">
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:16px;font-weight:700;">${d.w}</div>
-      <div style="font-size:13px;color:#6e6e73;">［${d.c}］</div>
-      <div class="muted" style="font-size:14px;line-height:1.4;">${d.m}</div>
-    </div>
-    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
-      ${d.lv===1?`<div class="dots">${[0,1,2].map(i=>`<div class="dot${i<(d.streak||0)?' on':''}"></div>`).join('')}</div>`:'<span class="badge badge-lv2" style="font-size:12px;">定着</span>'}
-      <button style="background:#ffeeed;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="delWord(${d.id})">🗑</button>
-    </div>
-  </div>`).join('');
+
+  // 動詞を軸にグループ化
+  const verbCats=['動詞','句動詞'];
+  const verbs=f.filter(d=>verbCats.includes(d.c));
+  const others=f.filter(d=>!verbCats.includes(d.c));
+
+  // 動詞の語幹を取得（スペースや~を除去）
+  function stem(w){return w.replace(/[~\s].*/,'').toLowerCase();}
+
+  // 非動詞を動詞に紐付け
+  const groups=[];
+  const used=new Set();
+  verbs.forEach(v=>{
+    const s=stem(v.w);
+    const related=others.filter(o=>!used.has(o.id)&&stem(o.w).startsWith(s)&&stem(o.w)!==s);
+    related.forEach(r=>used.add(r.id));
+    groups.push({verb:v,related});
+  });
+  // 紐付けできなかった非動詞
+  const orphans=others.filter(o=>!used.has(o.id));
+
+  function wordRow(d,isRelated=false){
+    return `<div class="word-row" style="${isRelated?'padding-left:14px;border-left:3px solid #e1f0ff;':''}">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:${isRelated?'14':'16'}px;font-weight:700;color:${isRelated?'#0051a8':'#1d1d1f'};">${d.w}</div>
+        <div style="font-size:12px;color:#6e6e73;">［${d.c}］</div>
+        <div style="font-size:14px;color:#1d1d1f;line-height:1.4;">${d.m}</div>
+        <div style="font-size:12px;margin-top:4px;text-align:right;">
+          <span style="color:#1a7318;font-weight:700;">🎉${d.totalOk||0}回</span>　
+          <span style="color:#9b1c1c;font-weight:700;">💦${d.totalNg||0}回</span>　
+          <span style="color:#0071e3;font-weight:700;">🔥${d.streak||0}連続</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px;">
+        ${d.lv===2?'<span class="badge badge-lv2" style="font-size:12px;">定着</span>':''}
+        <button style="background:#ffeeed;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="delWord(${d.id})">🗑</button>
+      </div>
+    </div>`;
+  }
+
+  let html='';
+  groups.forEach(g=>{
+    html+=wordRow(g.verb,false);
+    g.related.forEach(r=>{html+=wordRow(r,true);});
+  });
+  orphans.forEach(o=>{html+=wordRow(o,false);});
+  el.innerHTML=html;
 }
 function switchTab(t){
   wTab=t;
@@ -472,6 +603,13 @@ function switchTab(t){
   renderList();
 }
 function delWord(id){if(!confirm('削除しますか？'))return;db=db.filter(d=>d.id!==id);saveDB();updateStats();renderList();}
+
+// ページが非表示になった時・閉じた時にマイク停止
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden') stopMic();
+});
+window.addEventListener('pagehide',()=>stopMic());
+window.addEventListener('beforeunload',()=>stopMic());
 
 initDB();
 </script>
