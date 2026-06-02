@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>英単語トレーナー v2.6</title>
+<title>英単語トレーナー v2.7</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;font-size:17px;}
@@ -91,7 +91,7 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
 
 <!-- HOME -->
 <div class="screen active" id="s-home">
-  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v2.6</span></h1>
+  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v2.7</span></h1>
   <p class="subtitle">音声・テキスト両対応 / レベル管理</p>
 
   <div class="stat-grid">
@@ -405,7 +405,7 @@ function startQuiz(mode){
     pool=shuffle(pool);
   }
 
-  qMode=mode;quizPool=pool.slice(0,Math.min(10,pool.length));qIdx=0;
+  qMode=mode;quizPool=pool.slice(0,Math.min(5,pool.length));qIdx=0;
   sessionOk=0;sessionNg=0;
   go('s-quiz');
   document.getElementById('q-badge').innerHTML=mode==='lv1'?'<span class="badge badge-lv1">レベル1</span>':'<span class="badge badge-lv2">レベル2</span>';
@@ -585,7 +585,7 @@ function renderList(){
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px;">
         ${d.lv===2?'<span class="badge badge-lv2" style="font-size:12px;">定着</span>':''}
-        <button style="background:#ffeeed;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="delWord(${d.id})">🗑</button>
+        <button style="background:#e1f0ff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="editWord(${d.id})">✏️</button>
       </div>
     </div>`;
   }
@@ -604,7 +604,19 @@ function switchTab(t){
   document.getElementById('wtab-lv2').className='nav-tab'+(t==='lv2'?' active':'');
   renderList();
 }
-function delWord(id){if(!confirm('削除しますか？'))return;db=db.filter(d=>d.id!==id);saveDB();updateStats();renderList();}
+function editWord(id){
+  const d=db.find(x=>x.id===id);if(!d)return;
+  const newW=prompt('単語・フレーズを編集:',d.w);
+  if(newW===null)return;
+  const newM=prompt('意味を編集:',d.m);
+  if(newM===null)return;
+  const newC=prompt('カテゴリを編集:',d.c);
+  if(newC===null)return;
+  d.w=newW.trim()||d.w;
+  d.m=newM.trim()||d.m;
+  d.c=newC.trim()||d.c;
+  saveDB();renderList();
+}
 
 // ページが非表示になった時・閉じた時にマイク停止
 document.addEventListener('visibilitychange',()=>{
