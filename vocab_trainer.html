@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>英単語トレーナー v2.8</title>
+<title>英単語トレーナー v3.0</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;font-size:17px;}
@@ -74,7 +74,7 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
 .back-btn:active{transform:scale(0.97);}
 .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
 .search{margin-bottom:12px;}
-.word-list-wrap{max-height:55vh;overflow-y:auto;}
+.word-list-wrap{max-height:70vh;overflow-y:auto;}
 .sound-toggle{display:flex;align-items:center;gap:8px;font-size:15px;color:#6e6e73;}
 .mode-btn{padding:10px 8px;font-size:14px;font-weight:600;border:2px solid #d2d2d7;border-radius:12px;background:#fff;color:#6e6e73;cursor:pointer;text-align:center;transition:all 0.15s;}
 .mode-btn.active{border-color:#0071e3;background:#e1f0ff;color:#0051a8;}
@@ -91,7 +91,7 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
 
 <!-- HOME -->
 <div class="screen active" id="s-home">
-  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v2.8</span></h1>
+  <h1>英単語トレーナー <span style="font-size:15px;font-weight:500;color:#6e6e73;">v3.0</span></h1>
   <p class="subtitle">音声・テキスト両対応 / レベル管理</p>
 
   <div class="stat-grid">
@@ -117,9 +117,9 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
       <button class="mode-btn" id="mode-weak" onclick="setMode('weak')">💪 苦手優先</button>
       <button class="mode-btn" id="mode-streak" onclick="setMode('streak')">🔥 連続正解↑</button>
     </div>
-    <div class="label" style="margin-bottom:6px;">カテゴリ絞り込み（任意）</div>
+    <div class="label" style="margin-bottom:6px;">品詞で絞り込み（任意）</div>
     <select class="input" id="cat-filter" style="font-size:15px;">
-      <option value="">すべてのカテゴリ</option>
+      <option value="">すべての品詞</option>
       <option value="句動詞">句動詞</option>
       <option value="動詞">動詞</option>
       <option value="形容詞">形容詞</option>
@@ -240,8 +240,8 @@ h1{font-size:24px;font-weight:700;text-align:center;padding:14px 0 4px;}
     <input type="text" class="input" id="new-w" placeholder="例: get up" style="margin-bottom:10px;">
     <div class="label">意味・解説</div>
     <input type="text" class="input" id="new-m" placeholder="例: 起きる" style="margin-bottom:10px;">
-    <div class="label">カテゴリ（任意）</div>
-    <input type="text" class="input" id="new-c" placeholder="例: 句動詞、形容詞" style="margin-bottom:12px;">
+    <div class="label">品詞（任意）</div>
+    <input type="text" class="input" id="new-c" placeholder="例: 句動詞、動詞、名詞" style="margin-bottom:12px;">
     <button class="btn btn-primary" onclick="addWord()">＋ 追加する</button>
     <div id="add-st" class="muted" style="margin-top:8px;"></div>
   </div>
@@ -606,13 +606,10 @@ function switchTab(t){
 }
 function editWord(id){
   const d=db.find(x=>x.id===id);if(!d)return;
-  const newW=prompt('単語・フレーズを編集:',d.w);
-  if(newW===null)return;
-  const newM=prompt('意味を編集:',d.m);
+  const newM=prompt('意味を編集（単語: '+d.w+'）:',d.m);
   if(newM===null)return;
-  const newC=prompt('カテゴリを編集:',d.c);
+  const newC=prompt('品詞を編集:',d.c);
   if(newC===null)return;
-  d.w=newW.trim()||d.w;
   d.m=newM.trim()||d.m;
   d.c=newC.trim()||d.c;
   saveDB();renderList();
