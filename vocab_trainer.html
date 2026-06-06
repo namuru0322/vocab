@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.5</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.6</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -719,8 +719,13 @@ function renderList(){
   verbs.filter(v=>v.c==='句動詞').forEach(v=>{
     groups.push({verb:v,related:[]});
   });
-  // アルファベット順に並び替え
-  groups.sort((a,b)=>a.verb.w.toLowerCase().localeCompare(b.verb.w.toLowerCase()));
+  // カテゴリー順を定義してその中でアルファベット順
+  const catOrder=['句動詞','動詞'];
+  groups.sort((a,b)=>{
+    const ci=catOrder.indexOf(a.verb.c)-catOrder.indexOf(b.verb.c);
+    if(ci!==0) return ci;
+    return a.verb.w.toLowerCase().localeCompare(b.verb.w.toLowerCase());
+  });
   // 紐付けできなかった非動詞
   const orphans=others.filter(o=>!used.has(o.id));
 
