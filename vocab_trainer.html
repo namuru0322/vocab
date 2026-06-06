@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.3</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.5</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -694,21 +694,33 @@ function renderList(){
 
   // 動詞を軸にグループ化
   const verbCats=['動詞','句動詞'];
-  const verbs=f.filter(d=>verbCats.includes(d.c));
-  const others=f.filter(d=>!verbCats.includes(d.c));
+  const verbs=f.filter(d=>verbCats.includes(d.c)).sort((a,b)=>a.w.toLowerCase().localeCompare(b.w.toLowerCase()));
+  const others=f.filter(d=>!verbCats.includes(d.c)).sort((a,b)=>a.w.toLowerCase().localeCompare(b.w.toLowerCase()));
 
   // 動詞の語幹を取得（スペースや~を除去）
   function stem(w){return w.replace(/[~\s].*/,'').toLowerCase();}
 
-  // 非動詞を動詞に紐付け
+  // 非動詞を動詞に紐付け（語幹マッチのみ、句動詞・フレーズ・熟語は除外）
+  const excludeCats=['句動詞','フレーズ','熟語'];
   const groups=[];
   const used=new Set();
-  verbs.forEach(v=>{
+  verbs.filter(v=>v.c==='動詞').forEach(v=>{
     const s=stem(v.w);
-    const related=others.filter(o=>!used.has(o.id)&&stem(o.w).startsWith(s)&&stem(o.w)!==s);
+    const related=others.filter(o=>
+      !used.has(o.id) &&
+      !excludeCats.includes(o.c) &&
+      stem(o.w).startsWith(s) &&
+      stem(o.w)!==s
+    );
     related.forEach(r=>used.add(r.id));
     groups.push({verb:v,related});
   });
+  // 句動詞は単独グループ（関連なし）
+  verbs.filter(v=>v.c==='句動詞').forEach(v=>{
+    groups.push({verb:v,related:[]});
+  });
+  // アルファベット順に並び替え
+  groups.sort((a,b)=>a.verb.w.toLowerCase().localeCompare(b.verb.w.toLowerCase()));
   // 紐付けできなかった非動詞
   const orphans=others.filter(o=>!used.has(o.id));
 
