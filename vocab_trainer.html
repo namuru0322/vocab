@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>英単語トレーナー v4.1</title>
+<title>英単語トレーナー v4.2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;font-size:17px;}
@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v4.1</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v4.2</span></p>
 
   <div class="stat-grid">
     <div class="stat-box stat-total"><div class="num" id="st-total">0</div><div class="lbl" style="color:#6e6e73;">総単語数</div></div>
@@ -311,6 +311,7 @@ let soundOn=true;
 let sessionOk=0,sessionNg=0;
 let audioCtx=null;
 let quizOrderMode='random';
+let judged=false;
 
 function setMode(m){
   quizOrderMode=m;
@@ -520,7 +521,7 @@ function speak(){
   const u=new SpeechSynthesisUtterance(q.w);u.lang='en-US';u.rate=0.85;
   window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
 }
-function toggleMic(){
+function toggleMic(){if(judged)return;
   if(isListening){if(rec)rec.stop();return;}
   if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){alert('iPhoneのSafariで開いてください');return;}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -531,9 +532,14 @@ function toggleMic(){
   rec.onerror=(e)=>{isListening=false;document.getElementById('mic-area').classList.remove('on');document.getElementById('mic-lbl').textContent='エラー: '+e.error;};
   rec.start();
 }
-function judgeText(){const v=document.getElementById('txt-ans').value.trim();if(!v)return;judge(v);}
+function judgeText(){if(judged)return;const v=document.getElementById('txt-ans').value.trim();if(!v)return;judge(v);}
 async function judge(ans){
   const q=quizPool[qIdx];
+  judged=true;
+  // 入力欄・マイクを無効化
+  document.getElementById('txt-ans').disabled=true;
+  document.getElementById('mic-area').style.pointerEvents='none';
+  document.getElementById('mic-area').style.opacity='0.4';
   document.getElementById('result-box').className='result thinking';
   document.getElementById('result-box').textContent='AIが判定中...';
   document.getElementById('result-box').style.display='block';
