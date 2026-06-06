@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.2</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.3</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -540,7 +540,7 @@ async function judge(ans){
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
       body:JSON.stringify({model:'gpt-4o-mini',max_tokens:120,messages:[
-        {role:'system',content:'あなたは英単語学習アプリのとても寛大な先生です。以下のルールで判定してください：①意味の核心さえ合っていれば必ず正解②類義語・言い換え・省略表現も正解③括弧内の補足説明は無視して核心だけで判定④音声認識のミスや表記ゆれも考慮して正解よりに判定⑤完全に無関係な意味の場合だけ不正解⑥複数の意味を並べて答えた場合、そのうち一つでも正解の意味に近ければ正解⑦「取り替える」「交換する」「入れ替える」のような同義語は全て正解⑧迷ったら必ず正解にする。JSONのみ返す: {"result":"correct"または"incorrect","comment":"日本語で一言（正解時は褒める、不正解時は優しく正解を教える）"}'},
+        {role:'system',content:'あなたは英単語学習アプリのとても寛大な先生です。以下のルールで判定してください：①意味の核心さえ合っていれば必ず正解②類義語・言い換え・省略表現も正解③括弧内の補足説明は無視して核心だけで判定④音声認識のミスや表記ゆれも考慮して正解よりに判定⑤完全に無関係な意味の場合だけ不正解⑥複数の意味を並べて答えた場合、そのうち一つでも正解の意味に近ければ正解⑦「取り替える」「交換する」「入れ替える」のような同義語は全て正解⑧活用形・語尾変化は正解とする（例：「含む」に対して「含んでいる」「含めている」も正解、「起きる」に対して「起きている」も正解）⑨迷ったら必ず正解にする。JSONのみ返す: {"result":"correct"または"incorrect","comment":"日本語で一言（正解時は褒める、不正解時は優しく正解を教える）"}'},
         {role:'user',content:'単語: '+q.w+'\n正解の意味（核心）: '+q.m.replace(/（[^）]*）/g,'').replace(/\([^)]*\)/g,'').trim()+'\n参考（補足含む全体）: '+q.m+'\nユーザーの回答: '+ans}
       ]})
     });
