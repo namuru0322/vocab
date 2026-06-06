@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>英単語トレーナー v4.2</title>
+<title>英単語トレーナー v4.3</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;font-size:17px;}
@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v4.2</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v4.3</span></p>
 
   <div class="stat-grid">
     <div class="stat-box stat-total"><div class="num" id="st-total">0</div><div class="lbl" style="color:#6e6e73;">総単語数</div></div>
@@ -510,9 +510,13 @@ function showQ(){
   document.getElementById('next-btn').style.display='none';
   document.getElementById('hint-btn').style.display='none';
   document.getElementById('txt-ans').value='';
+  document.getElementById('txt-ans').disabled=false;
+  document.getElementById('mic-area').style.pointerEvents='auto';
+  document.getElementById('mic-area').style.opacity='1';
   document.getElementById('transcript').textContent='';
   document.getElementById('mic-lbl').textContent='タップして音声で回答';
   document.getElementById('mic-area').classList.remove('on');
+  judged=false;
   isListening=false;transcript='';
 }
 function updateDots(n){}
