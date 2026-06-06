@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>英単語トレーナー v4.4</title>
+<title>英単語トレーナー v4.5</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh;font-size:17px;}
@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v4.4</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v4.5</span></p>
 
   <div class="stat-grid">
     <div class="stat-box stat-total"><div class="num" id="st-total">0</div><div class="lbl" style="color:#6e6e73;">総単語数</div></div>
@@ -553,8 +553,8 @@ async function judge(ans){
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
       body:JSON.stringify({model:'gpt-4o-mini',max_tokens:120,messages:[
-        {role:'system',content:'あなたは英単語学習アプリの優しい先生です。ユーザーの回答を寛大に判定してください。以下のルールで判定します：①意味の核心部分が合っていれば正解②多少の言い回しの違い・言葉足らず・ニュアンスのズレは正解③日本語の言い方が少し違っても意味が通じれば正解④完全に違う意味の場合だけ不正解。JSONのみ返す: {"result":"correct"または"incorrect","comment":"日本語で一言（正解時は褒める、不正解時は優しく正解を教える）"}'},
-        {role:'user',content:'単語: '+q.w+'\n正解の意味: '+q.m+'\nユーザーの回答: '+ans}
+        {role:'system',content:'あなたは英単語学習アプリのとても寛大な先生です。以下のルールで判定してください：①意味の核心さえ合っていれば必ず正解②類義語・言い換え・省略表現も正解③括弧内の補足説明は無視して核心だけで判定④音声認識のミスや表記ゆれも考慮して正解よりに判定⑤完全に無関係な意味の場合だけ不正解。迷ったら正解にする。JSONのみ返す: {"result":"correct"または"incorrect","comment":"日本語で一言（正解時は褒める、不正解時は優しく正解を教える）"}'},
+        {role:'user',content:'単語: '+q.w+'\n正解の意味（核心）: '+q.m.replace(/（[^）]*）/g,'').replace(/\([^)]*\)/g,'').trim()+'\n参考（補足含む全体）: '+q.m+'\nユーザーの回答: '+ans}
       ]})
     });
     const data=await res.json();
