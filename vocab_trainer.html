@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.8</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.9</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -646,7 +646,7 @@ function showSummary(){
     date: new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),
     ok: sessionOk, ng: sessionNg,
     mode: qMode,
-    words: quizPool.map(q=>({w:q.w,result:q.sessionResult==='correct'}))
+    words: quizPool.map(q=>({w:q.w, c:q.c, result:q.sessionResult==='correct', totalOk:q.totalOk||0, totalNg:q.totalNg||0, streak:q.streak||0}))
   };
   let hist=JSON.parse(localStorage.getItem('vt_hist')||'[]');
   hist.unshift(historyEntry);
@@ -702,9 +702,17 @@ function showHistoryInner(){
         </div>
       </div>
       <div>${h.words.map(w=>`
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f5;font-size:14px;">
-          <span>${w.w}</span>
-          <span style="${w.result?'color:#1a7318':'color:#9b1c1c'};font-weight:700;">${w.result?'✓':'✗'}</span>
+        <div style="padding:8px 0;border-bottom:1px solid #f0f0f5;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:600;font-size:14px;">${w.w}</span>
+            <span style="${w.result?'color:#1a7318':'color:#9b1c1c'};font-weight:700;font-size:15px;">${w.result?'✓':'✗'}</span>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:3px;font-size:12px;color:#6e6e73;">
+            ${w.c?`<span>［${w.c}］</span>`:''}
+            <span>🎉${w.totalOk||0}</span>
+            <span>💦${w.totalNg||0}</span>
+            ${(w.streak||0)>=2?`<span>🔥${w.streak}連続</span>`:''}
+          </div>
         </div>`).join('')}
       </div>
     </div>`).join('');
