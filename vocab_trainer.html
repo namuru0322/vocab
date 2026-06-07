@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.6</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.8</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -405,15 +405,68 @@ async function initDB(){
         lv:Number(w.lv)||1,
         streak:Number(w.streak)||0,
         totalOk:Number(w.totalOk)||0,
-        totalNg:Number(w.totalNg)||0
+        totalNg:Number(w.totalNg)||0,
+        parent:w.parent||''
       }));
       setSyncStatus('✅ '+db.length+'語を読み込みました');
+      // parentが空の非動詞単語があればAI一括スキャン
+      await autoScanParents();
     } else {
       setSyncStatus('⚠️ 単語の読み込みに失敗しました');
     }
   } catch(e){
     setSyncStatus('❌ 接続エラー: '+e.message);
   }
+  updateStats();
+}
+
+async function autoScanParents(){
+  if(!apiKey) return;
+  const excludeCats=['動詞','句動詞','フレーズ','熟語'];
+  const targets=db.filter(d=>!excludeCats.includes(d.c)&&!d.parent);
+  if(!targets.length) return;
+  const verbs=db.filter(d=>d.c==='動詞').map(d=>d.w);
+  if(!verbs.length) return;
+
+  setSyncStatus('🔍 語族を自動判定中... ('+targets.length+'語)');
+
+  // 10語ずつバッチ処理
+  const batchSize=10;
+  for(let i=0;i<targets.length;i+=batchSize){
+    const batch=targets.slice(i,i+batchSize);
+    try{
+      const wordList=batch.map(d=>`${d.w}(${d.c})`).join(', ');
+      const res=await fetch('https://api.openai.com/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+        body:JSON.stringify({
+          model:'gpt-4o-mini',
+          max_tokens:200,
+          messages:[
+            {role:'system',content:'英単語の語族判定アシスタントです。JSONのみ返してください。'},
+            {role:'user',content:`以下の単語それぞれについて、動詞リストの中に同じ語族の動詞があれば返してください。なければ空文字にしてください。\n\n単語リスト: ${wordList}\n動詞リスト: ${verbs.join(', ')}\n\n形式: {"結果":[{"w":"単語","parent":"親動詞または空文字"},...]}}`}
+          ]
+        })
+      });
+      const data=await res.json();
+      const text=data.choices[0].message.content.replace(/```json|```/g,'').trim();
+      const parsed=JSON.parse(text);
+      const results=parsed['結果']||parsed.results||[];
+
+      // 結果をdbに反映してスプレッドシートに書き込み
+      for(const r of results){
+        if(!r.parent) continue;
+        const entry=db.find(d=>d.w===r.w);
+        if(!entry) continue;
+        entry.parent=r.parent;
+        await fetch(GAS_URL,{
+          method:'POST',
+          body:JSON.stringify({action:'updateParent',id:entry.id,parent:r.parent})
+        });
+      }
+    } catch(e){ console.warn('autoScan batch error',e); }
+  }
+  setSyncStatus('✅ 語族判定完了');
   updateStats();
 }
 function setSyncStatus(msg){
@@ -659,24 +712,53 @@ function showHistoryInner(){
 }
 function showHint(){const q=quizPool[qIdx];alert('ヒント: '+q.m.substring(0,Math.ceil(q.m.length/2))+'...');}
 function nextWord(){qIdx++;showQ();}
+async function detectParent(w, c){
+  // 動詞・句動詞・フレーズ・熟語は親不要
+  if(['動詞','句動詞','フレーズ','熟語'].includes(c)) return '';
+  // db内の動詞リストを取得
+  const verbs=db.filter(d=>d.c==='動詞').map(d=>d.w);
+  if(!verbs.length) return '';
+  try{
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({
+        model:'gpt-4o-mini',
+        max_tokens:50,
+        messages:[
+          {role:'system',content:'英単語の語族を判定するアシスタントです。JSONのみ返してください。'},
+          {role:'user',content:`単語「${w}」（品詞:${c}）は以下の動詞リストのどれかと同じ語族ですか？\n動詞リスト: ${verbs.join(', ')}\n\n同じ語族の動詞があれば{"parent":"その動詞"}、なければ{"parent":""}を返してください。`}
+        ]
+      })
+    });
+    const data=await res.json();
+    const text=data.choices[0].message.content.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(text);
+    return parsed.parent||'';
+  } catch(e){ return ''; }
+}
+
 async function addWord(){
   const w=document.getElementById('new-w').value.trim();
   const m=document.getElementById('new-m').value.trim();
   const c=document.getElementById('new-c').value.trim()||'その他';
   if(!w||!m){document.getElementById('add-st').textContent='単語と意味を入力してください';return;}
+  document.getElementById('add-st').textContent='⏳ 語族を判定中...';
+  const parent=await detectParent(w,c);
   document.getElementById('add-st').textContent='⏳ 追加中...';
   try{
     const res=await fetch(GAS_URL,{
       method:'POST',
-      body:JSON.stringify({action:'addWord',w,m,c})
+      body:JSON.stringify({action:'addWord',w,m,c,parent})
     });
     const data=await res.json();
     if(data.ok){
-      const newEntry={w,m,c,lv:1,streak:0,totalOk:0,totalNg:0,id:data.id};
+      const newEntry={w,m,c,lv:1,streak:0,totalOk:0,totalNg:0,id:data.id,parent};
       db.push(newEntry);
       updateStats();
       document.getElementById('new-w').value='';document.getElementById('new-m').value='';document.getElementById('new-c').value='';
-      document.getElementById('add-st').textContent='✓ 追加しました！（合計'+db.length+'語）';
+      const parentMsg=parent?` (「${parent}」に紐付け)`:'';
+      document.getElementById('add-st').textContent='✓ 追加しました！（合計'+db.length+'語）'+parentMsg;
     } else {
       document.getElementById('add-st').textContent='❌ エラー: '+data.error;
     }
@@ -692,34 +774,30 @@ function renderList(){
   const el=document.getElementById('word-list');
   if(!f.length){el.innerHTML='<div class="muted" style="padding:12px;text-align:center;">該当なし</div>';return;}
 
-  // 動詞を軸にグループ化
+  // 動詞を軸にグループ化（parentフィールドベース）
   const verbCats=['動詞','句動詞'];
+  const excludeCats=['フレーズ','熟語'];
   const verbs=f.filter(d=>verbCats.includes(d.c)).sort((a,b)=>a.w.toLowerCase().localeCompare(b.w.toLowerCase()));
   const others=f.filter(d=>!verbCats.includes(d.c)).sort((a,b)=>a.w.toLowerCase().localeCompare(b.w.toLowerCase()));
 
-  // 動詞の語幹を取得（スペースや~を除去）
-  function stem(w){return w.replace(/[~\s].*/,'').toLowerCase();}
-
-  // 非動詞を動詞に紐付け（語幹マッチのみ、句動詞・フレーズ・熟語は除外）
-  const excludeCats=['句動詞','フレーズ','熟語'];
   const groups=[];
   const used=new Set();
+
+  // parentが設定されている単語を動詞に紐付け
   verbs.filter(v=>v.c==='動詞').forEach(v=>{
-    const s=stem(v.w);
     const related=others.filter(o=>
       !used.has(o.id) &&
       !excludeCats.includes(o.c) &&
-      stem(o.w).startsWith(s) &&
-      stem(o.w)!==s
+      o.parent && o.parent.toLowerCase()===v.w.toLowerCase()
     );
     related.forEach(r=>used.add(r.id));
     groups.push({verb:v,related});
   });
-  // 句動詞は単独グループ（関連なし）
+  // 句動詞は単独
   verbs.filter(v=>v.c==='句動詞').forEach(v=>{
     groups.push({verb:v,related:[]});
   });
-  // カテゴリー順を定義してその中でアルファベット順
+  // カテゴリー順→アルファベット順
   const catOrder=['句動詞','動詞'];
   groups.sort((a,b)=>{
     const ci=catOrder.indexOf(a.verb.c)-catOrder.indexOf(b.verb.c);
