@@ -422,9 +422,10 @@ async function initDB(){
 
 async function autoScanParents(){
   if(!apiKey) return;
+  if(localStorage.getItem('vt_parent_scanned')==='1') return;
   const excludeCats=['動詞','句動詞','フレーズ','熟語'];
   const targets=db.filter(d=>!excludeCats.includes(d.c)&&!d.parent);
-  if(!targets.length) return;
+  if(!targets.length){localStorage.setItem('vt_parent_scanned','1');return;}
   const verbs=db.filter(d=>d.c==='動詞').map(d=>d.w);
   if(!verbs.length) return;
 
@@ -467,6 +468,7 @@ async function autoScanParents(){
     } catch(e){ console.warn('autoScan batch error',e); }
   }
   setSyncStatus('✅ 語族判定完了');
+  localStorage.setItem('vt_parent_scanned','1');
   updateStats();
 }
 function setSyncStatus(msg){
