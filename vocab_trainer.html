@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v5.9</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.1</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -238,6 +238,8 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
   <div class="search">
     <input type="text" class="input" id="search" placeholder="🔍 検索..." oninput="renderList()">
   </div>
+  <!-- 品詞ジャンプバー -->
+  <div id="cat-jump-bar" style="display:flex;overflow-x:auto;gap:6px;padding:6px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;"></div>
   <div class="card word-list-wrap">
     <div id="word-list"></div>
   </div>
@@ -445,7 +447,7 @@ async function autoScanParents(){
           max_tokens:200,
           messages:[
             {role:'system',content:'英単語の語族判定アシスタントです。JSONのみ返してください。'},
-            {role:'user',content:`以下の単語それぞれについて、動詞リストの中に同じ語族の動詞があれば返してください。なければ空文字にしてください。\n\n単語リスト: ${wordList}\n動詞リスト: ${verbs.join(', ')}\n\n形式: {"結果":[{"w":"単語","parent":"親動詞または空文字"},...]}}`}
+            {role:'user',content:`以下の単語それぞれについて、動詞リストの中に【同じ語根（語幹）を持つ】動詞があれば返してください。意味が似ているだけでは不可。語根が同じ場合のみ正解です（例：verify→verification OK、waste→trash NG）。なければ空文字にしてください。\n\n単語リスト: ${wordList}\n動詞リスト: ${verbs.join(', ')}\n\n形式: {"結果":[{"w":"単語","parent":"親動詞または空文字"},...]}}`}
           ]
         })
       });
@@ -737,7 +739,7 @@ async function detectParent(w, c){
         max_tokens:50,
         messages:[
           {role:'system',content:'英単語の語族を判定するアシスタントです。JSONのみ返してください。'},
-          {role:'user',content:`単語「${w}」（品詞:${c}）は以下の動詞リストのどれかと同じ語族ですか？\n動詞リスト: ${verbs.join(', ')}\n\n同じ語族の動詞があれば{"parent":"その動詞"}、なければ{"parent":""}を返してください。`}
+          {role:'user',content:`単語「${w}」（品詞:${c}）は以下の動詞リストのどれかと【同じ語根（語幹）】を持ちますか？意味が似ているだけでは不可。語根が同じ場合のみ正解です（例：verify→verification OK、waste→trash NG）。\n動詞リスト: ${verbs.join(', ')}\n\n同じ語根の動詞があれば{"parent":"その動詞"}、なければ{"parent":""}を返してください。`}
         ]
       })
     });
@@ -753,6 +755,9 @@ async function addWord(){
   const m=document.getElementById('new-m').value.trim();
   const c=document.getElementById('new-c').value.trim()||'その他';
   if(!w||!m){document.getElementById('add-st').textContent='単語と意味を入力してください';return;}
+  // ボタンを無効化して二重登録を防止
+  const btn=document.querySelector('#s-add .btn-primary');
+  if(btn) btn.disabled=true;
   document.getElementById('add-st').textContent='⏳ 語族を判定中...';
   const parent=await detectParent(w,c);
   document.getElementById('add-st').textContent='⏳ 追加中...';
@@ -774,6 +779,8 @@ async function addWord(){
     }
   } catch(e){
     document.getElementById('add-st').textContent='❌ 接続エラー: '+e.message;
+  } finally{
+    if(btn) btn.disabled=false;
   }
 }
 function renderList(){
@@ -838,9 +845,12 @@ function renderList(){
 
   let html='';
   let lastCat='';
+  const catList=[];
   groups.forEach(g=>{
     if(g.verb.c !== lastCat){
-      html+=`<div style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${g.verb.c}</div>`;
+      const anchorId='cat-'+g.verb.c;
+      if(!catList.includes(g.verb.c)) catList.push(g.verb.c);
+      html+=`<div id="${anchorId}" style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${g.verb.c}</div>`;
       lastCat=g.verb.c;
     }
     html+=wordRow(g.verb,false);
@@ -849,11 +859,23 @@ function renderList(){
   if(orphans.length){
     const orphanCats=[...new Set(orphans.map(o=>o.c))];
     orphanCats.forEach(cat=>{
-      html+=`<div style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${cat}</div>`;
+      const anchorId='cat-'+cat;
+      if(!catList.includes(cat)) catList.push(cat);
+      html+=`<div id="${anchorId}" style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${cat}</div>`;
       orphans.filter(o=>o.c===cat).forEach(o=>{html+=wordRow(o,false);});
     });
   }
   el.innerHTML=html;
+
+  // 品詞ジャンプバーを生成
+  const bar=document.getElementById('cat-jump-bar');
+  if(bar){
+    bar.innerHTML=catList.map(cat=>`
+      <button onclick="document.getElementById('cat-${cat}')?.scrollIntoView({behavior:'smooth',block:'start'})"
+        style="flex-shrink:0;background:#fff;border:1.5px solid #0071e3;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;color:#0071e3;cursor:pointer;white-space:nowrap;">
+        ${cat}
+      </button>`).join('');
+  }
 }
 function switchTab(t){
   wTab=t;
