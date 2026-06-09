@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.3</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.4</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -834,6 +834,33 @@ function renderList(){
   // 紐付けできなかった非動詞
   const orphans=others.filter(o=>!used.has(o.id));
 
+  // orphansの中でparentが設定されているものを親単語でグループ化
+  const nonVerbGroups=[];
+  const orphanUsed=new Set();
+  const orphanParents=orphans.filter(o=>o.parent&&o.parent!=='-'&&!['動詞','句動詞'].some(c=>c===o.c));
+  // 親になれる単語（orphans内でparentに指定されているもの）
+  const parentWords=[...new Set(orphanParents.map(o=>o.parent.toLowerCase()))];
+  orphans.forEach(o=>{
+    if(orphanUsed.has(o.id)) return;
+    if(parentWords.includes(o.w.toLowerCase())){
+      // この単語が誰かの親→グループの先頭
+      const children=orphans.filter(c=>
+        !orphanUsed.has(c.id) &&
+        c.id!==o.id &&
+        c.parent&&c.parent.toLowerCase()===o.w.toLowerCase()
+      );
+      children.forEach(c=>orphanUsed.add(c.id));
+      orphanUsed.add(o.id);
+      nonVerbGroups.push({head:o,children});
+    } else if(!o.parent||o.parent==='-'||!parentWords.includes(o.parent.toLowerCase())){
+      // 親なし単語は単独
+      if(!orphanUsed.has(o.id)){
+        orphanUsed.add(o.id);
+        nonVerbGroups.push({head:o,children:[]});
+      }
+    }
+  });
+
   function wordRow(d,isRelated=false){
     return `<div class="word-row" style="${isRelated?'padding-left:14px;border-left:3px solid #e1f0ff;':''}">
       <div style="flex:1;min-width:0;">
@@ -867,13 +894,16 @@ function renderList(){
     html+=wordRow(g.verb,false);
     g.related.forEach(r=>{html+=wordRow(r,true);});
   });
-  if(orphans.length){
-    const orphanCats=[...new Set(orphans.map(o=>o.c))];
+  if(nonVerbGroups.length){
+    const orphanCats=[...new Set(nonVerbGroups.map(g=>g.head.c))];
     orphanCats.forEach(cat=>{
       const anchorId='cat-'+cat;
       if(!catList.includes(cat)) catList.push(cat);
       html+=`<div id="${anchorId}" style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${cat}</div>`;
-      orphans.filter(o=>o.c===cat).forEach(o=>{html+=wordRow(o,false);});
+      nonVerbGroups.filter(g=>g.head.c===cat).forEach(g=>{
+        html+=wordRow(g.head,false);
+        g.children.forEach(c=>{html+=wordRow(c,true);});
+      });
     });
   }
   el.innerHTML=html;
