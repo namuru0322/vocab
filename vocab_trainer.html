@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.2</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.3</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -112,14 +112,6 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
     <div class="label" style="margin-bottom:6px;">品詞で絞り込み（任意）</div>
     <select class="input" id="cat-filter" style="font-size:15px;">
       <option value="">すべての品詞</option>
-      <option value="句動詞">句動詞</option>
-      <option value="動詞">動詞</option>
-      <option value="形容詞">形容詞</option>
-      <option value="名詞">名詞</option>
-      <option value="副詞">副詞</option>
-      <option value="熟語">熟語</option>
-      <option value="フレーズ">フレーズ</option>
-      <option value="前置詞">前置詞</option>
     </select>
   </div>
 
@@ -491,6 +483,20 @@ function updateStats(){
   document.getElementById('st-total').textContent=db.length;
   document.getElementById('st-lv1').textContent=db.filter(d=>d.lv===1).length;
   document.getElementById('st-lv2').textContent=db.filter(d=>d.lv===2).length;
+  // 品詞ドロップダウンを動的更新
+  const sel=document.getElementById('cat-filter');
+  const current=sel.value;
+  const cats=[...new Set(db.map(d=>d.c).filter(Boolean))];
+  const order=['句動詞','動詞','形容詞','名詞','副詞','前置詞','熟語','フレーズ'];
+  cats.sort((a,b)=>{
+    const ai=order.indexOf(a), bi=order.indexOf(b);
+    if(ai>=0&&bi>=0) return ai-bi;
+    if(ai>=0) return -1;
+    if(bi>=0) return 1;
+    return a.localeCompare(b);
+  });
+  sel.innerHTML='<option value="">すべての品詞</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  if(current) sel.value=current;
 }
 function saveKey(){
   const v=document.getElementById('api-input').value.trim();
