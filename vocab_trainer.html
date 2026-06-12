@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.7</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.8</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -584,7 +584,7 @@ function speak(){
   window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
 }
 async function toggleFocus(id){
-  const entry=db.find(d=>d.id===id);
+  const entry=db.find(d=>String(d.id)===String(id));
   if(!entry) return;
   entry.focus=entry.focus?0:1;
   try{
@@ -898,9 +898,11 @@ function renderList(){
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px;">
         ${d.lv===2?'<span class="badge badge-lv2" style="font-size:12px;">定着</span>':''}
-        <button style="background:${d.focus?'#fff3cd':'#e1f0ff'};border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="toggleFocus(${d.id})">🔥</button>
-        <button style="background:#e1f0ff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="speakWord('${d.w.replace(/'/g,"\\'")}')">🔊</button>
-        <button style="background:#e1f0ff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="editWord(${d.id})">✏️</button>
+        <div style="display:flex;flex-direction:row;gap:4px;align-items:center;">
+          <button style="background:${d.focus?'#ff9500':'#e1f0ff'};border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;opacity:${d.focus?'1':'0.4'};" onclick="toggleFocus(${d.id})">🔥</button>
+          <button style="background:#e1f0ff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="speakWord('${d.w.replace(/'/g,"\\'")}')">🔊</button>
+          <button style="background:#e1f0ff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="editWord(${d.id})">✏️</button>
+        </div>
       </div>
     </div>`;
   }
