@@ -503,6 +503,8 @@ function saveKey(){
   const v=document.getElementById('api-input').value.trim();
   if(!v.startsWith('sk-')){document.getElementById('key-st').textContent='sk- で始まるキーを入力してください';return;}
   apiKey=v;localStorage.setItem('vt_key',v);document.getElementById('key-st').textContent='✓ 保存しました';
+  // APIキー設定後にDBが空の場合は再読み込み
+  if(!db.length) initDB();
 }
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -593,6 +595,7 @@ async function toggleFocus(id){
   } catch(e){ console.warn('focus sync error',e); }
   renderList();
 }
+function speakWord(w){
   const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.85;
   window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
 }
