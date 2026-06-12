@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.5</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.6</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -107,7 +107,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
       <button class="mode-btn active" id="mode-random" onclick="setMode('random')">🎲 ランダム</button>
       <button class="mode-btn" id="mode-unlearned" onclick="setMode('unlearned')">🆕 未学習優先</button>
       <button class="mode-btn" id="mode-weak" onclick="setMode('weak')">💪 苦手優先</button>
-      <button class="mode-btn" id="mode-streak" onclick="setMode('streak')">🔥 連続正解↑</button>
+      <button class="mode-btn" id="mode-streak" onclick="setMode('focus')">THE集中🔥</button>
     </div>
     <div class="label" style="margin-bottom:6px;">品詞で絞り込み（任意）</div>
     <select class="input" id="cat-filter" style="font-size:15px;">
@@ -400,7 +400,8 @@ async function initDB(){
         streak:Number(w.streak)||0,
         totalOk:Number(w.totalOk)||0,
         totalNg:Number(w.totalNg)||0,
-        parent:w.parent||''
+        parent:w.parent||'',
+        focus:Number(w.focus)||0
       }));
       setSyncStatus('✅ '+db.length+'語を読み込みました');
       // parentが空の非動詞単語があればAI一括スキャン
@@ -516,7 +517,12 @@ function startQuiz(mode){
   if(!pool.length){alert('該当する単語がありません');return;}
 
   // 出題モードで並び替え
-  if(quizOrderMode==='unlearned'){
+  if(quizOrderMode==='focus'){
+    // THE集中：focusが1の単語のみ
+    const focusPool=pool.filter(d=>d.focus===1);
+    if(!focusPool.length){alert('🔥マークした単語がありません\n単語一覧または結果画面で🔥ボタンを押してください');return;}
+    pool=shuffle(focusPool);
+  } else if(quizOrderMode==='unlearned'){
     // 未学習（totalOk+totalNgが0）を優先
     pool.sort((a,b)=>{
       const aTotal=(a.totalOk||0)+(a.totalNg||0);
@@ -553,7 +559,7 @@ function showQ(){
   const okC=q.totalOk||0; const ngC=q.totalNg||0; const st=q.streak||0;
   document.getElementById('q-ok-count').textContent='🎉 '+okC+'回';
   document.getElementById('q-ng-count').textContent='💦 '+ngC+'回';
-  document.getElementById('q-streak-info').textContent=st>=2?'🔥 '+st+'回連続正解中！':'';
+  document.getElementById('q-streak-info').textContent=st>=2?'✅ '+st+'回連続正解中！':'';
   updateDots(q.streak||0);
   document.getElementById('result-box').style.display='none';
   document.getElementById('result-box').className='result thinking';
@@ -575,7 +581,18 @@ function speak(){
   const u=new SpeechSynthesisUtterance(q.w);u.lang='en-US';u.rate=0.85;
   window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
 }
-function speakWord(w){
+async function toggleFocus(id){
+  const entry=db.find(d=>d.id===id);
+  if(!entry) return;
+  entry.focus=entry.focus?0:1;
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'updateFocus',id:entry.id,focus:entry.focus})
+    });
+  } catch(e){ console.warn('focus sync error',e); }
+  renderList();
+}
   const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.85;
   window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
 }
@@ -643,7 +660,7 @@ async function judge(ans){
       '<div class="score-row">'+
       '<span class="score-ok">🎉 累計'+(q.totalOk||0)+'回</span>'+
       '<span class="score-ng">💦 累計'+(q.totalNg||0)+'回</span>'+
-      (dbEntry&&dbEntry.streak>=2?'<span class="score-streak">🔥 連続'+(dbEntry.streak||0)+'回</span>':'')+
+      (dbEntry&&dbEntry.streak>=2?'<span class="score-streak">✅ 連続'+(dbEntry.streak||0)+'回</span>':'')+
       '</div>';
     document.getElementById('next-btn').style.display='block';
   }catch(e){
@@ -676,9 +693,12 @@ function showSummary(){
         <div style="font-size:16px;font-weight:700;">${q.w}［${q.c}］</div>
         <div style="font-size:13px;color:#6e6e73;">${q.m}</div>
       </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="${ok?'color:#1a7318':'color:#9b1c1c'};font-size:16px;font-weight:700;">${ok?'✓ 正解':'✗ 不正解'}</div>
-        <div style="font-size:12px;color:#6e6e73;">🎉${q.totalOk||0} 💦${q.totalNg||0}${q.streak>=2?' 🔥'+q.streak+'連続':''}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <button style="background:${(db.find(d=>d.id===q.id)||{}).focus?'#fff3cd':'#e1f0ff'};border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="toggleFocus(${q.id});this.style.background=(db.find(d=>d.id===${q.id})||{}).focus?'#fff3cd':'#e1f0ff'">🔥</button>
+        <div style="text-align:right;">
+          <div style="${ok?'color:#1a7318':'color:#9b1c1c'};font-size:16px;font-weight:700;">${ok?'✓ 正解':'✗ 不正解'}</div>
+          <div style="font-size:12px;color:#6e6e73;">🎉${q.totalOk||0} 💦${q.totalNg||0}${q.streak>=2?' ✅'+q.streak+'連続':''}</div>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -725,7 +745,7 @@ function showHistoryInner(){
             ${w.c?`<span>［${w.c}］</span>`:''}
             <span>🎉${w.totalOk||0}</span>
             <span>💦${w.totalNg||0}</span>
-            ${(w.streak||0)>=2?`<span>🔥${w.streak}連続</span>`:''}
+            ${(w.streak||0)>=2?`<span>✅${w.streak}連続</span>`:''}
           </div>
         </div>`).join('')}
       </div>
@@ -870,11 +890,12 @@ function renderList(){
         <div style="font-size:12px;margin-top:4px;text-align:right;">
           <span style="color:#1a7318;font-weight:700;">🎉${d.totalOk||0}回</span>　
           <span style="color:#9b1c1c;font-weight:700;">💦${d.totalNg||0}回</span>　
-          ${d.streak>=2?'<span style="color:#0071e3;font-weight:700;">🔥'+d.streak+'連続</span>':''}
+          ${d.streak>=2?'<span style="color:#0071e3;font-weight:700;">✅'+d.streak+'連続</span>':''}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px;">
         ${d.lv===2?'<span class="badge badge-lv2" style="font-size:12px;">定着</span>':''}
+        <button style="background:${d.focus?'#fff3cd':'#e1f0ff'};border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="toggleFocus(${d.id})">🔥</button>
         <button style="background:#e1f0ff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="speakWord('${d.w.replace(/'/g,"\\'")}')">🔊</button>
         <button style="background:#e1f0ff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="editWord(${d.id})">✏️</button>
       </div>
