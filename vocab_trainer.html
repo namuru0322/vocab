@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v6.9</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.0</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -697,7 +697,7 @@ function showSummary(){
         <div style="font-size:13px;color:#6e6e73;">${q.m}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-        <button style="background:${(db.find(d=>d.id===q.id)||{}).focus?'#fff3cd':'#e1f0ff'};border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="toggleFocus(${q.id});this.style.background=(db.find(d=>d.id===${q.id})||{}).focus?'#fff3cd':'#e1f0ff'">🔥</button>
+        <button style="background:${(db.find(d=>String(d.id)===String(q.id))||{}).focus?'#ff9500':'#e1f0ff'};opacity:${(db.find(d=>String(d.id)===String(q.id))||{}).focus?'1':'0.4'};border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="toggleFocus(${q.id});const _e=db.find(d=>String(d.id)==='${q.id}');this.style.background=_e&&_e.focus?'#ff9500':'#e1f0ff';this.style.opacity=_e&&_e.focus?'1':'0.4';">🔥</button>
         <div style="text-align:right;">
           <div style="${ok?'color:#1a7318':'color:#9b1c1c'};font-size:16px;font-weight:700;">${ok?'✓ 正解':'✗ 不正解'}</div>
           <div style="font-size:12px;color:#6e6e73;">🎉${q.totalOk||0} 💦${q.totalNg||0}${q.streak>=2?' ✅'+q.streak+'連続':''}</div>
