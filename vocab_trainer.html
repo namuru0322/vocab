@@ -108,6 +108,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
       <button class="mode-btn" id="mode-unlearned" onclick="setMode('unlearned')">🆕 未学習優先</button>
       <button class="mode-btn" id="mode-weak" onclick="setMode('weak')">💪 苦手優先</button>
       <button class="mode-btn" id="mode-focus" onclick="setMode('focus')">THE集中🔥</button>
+      <button class="mode-btn" id="mode-recent" onclick="setMode('recent')" style="grid-column:1/-1;">🕐 最近追加</button>
     </div>
     <div class="label" style="margin-bottom:6px;">品詞で絞り込み（任意）</div>
     <select class="input" id="cat-filter" style="font-size:15px;">
@@ -224,8 +225,9 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
     <span class="muted" id="wcount"></span>
   </div>
   <div class="nav-tabs">
-    <button class="nav-tab active" id="wtab-lv1" onclick="switchTab('lv1')">レベル1 学習中</button>
-    <button class="nav-tab" id="wtab-lv2" onclick="switchTab('lv2')">レベル2 定着済み</button>
+    <button class="nav-tab active" id="wtab-all" onclick="switchTab('all')">全体</button>
+    <button class="nav-tab" id="wtab-lv1" onclick="switchTab('lv1')">レベル1</button>
+    <button class="nav-tab" id="wtab-lv2" onclick="switchTab('lv2')">レベル2</button>
   </div>
   <div class="search">
     <input type="text" class="input" id="search" placeholder="🔍 検索..." oninput="renderList()">
@@ -261,7 +263,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <script>
 const GAS_URL='https://script.google.com/macros/s/AKfycbwdQuumPWhm6T1zswm1jeXpIo5XPbvIDuDRV63-EHZ6jz6QeyhJhNsIu1yEc9gtxx4KRg/exec';
 
-let db=[],apiKey='',quizPool=[],qIdx=0,qMode='lv1',rec=null,isListening=false,transcript='',wTab='lv1';
+let db=[],apiKey='',quizPool=[],qIdx=0,qMode='lv1',rec=null,isListening=false,transcript='',wTab='all';
 let soundOn=true;
 let sessionOk=0,sessionNg=0;
 let audioCtx=null;
@@ -534,6 +536,9 @@ function startQuiz(mode){
   } else if(quizOrderMode==='weak'){
     // 不正解が多い順
     pool.sort((a,b)=>(b.totalNg||0)-(a.totalNg||0));
+  } else if(quizOrderMode==='recent'){
+    // 最近追加（idが大きい順）
+    pool.sort((a,b)=>Number(b.id)-Number(a.id));
   } else if(quizOrderMode==='streak'){
     // 連続正解が少ない順
     pool.sort((a,b)=>(a.streak||0)-(b.streak||0));
@@ -818,8 +823,11 @@ async function addWord(){
 }
 function renderList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
-  const targetLv=wTab==='lv1'?1:2;
-  const f=db.filter(d=>d.lv===targetLv&&(!q||(d.w+d.m).toLowerCase().includes(q)));
+  const f=db.filter(d=>{
+    if(wTab==='lv1') return d.lv===1;
+    if(wTab==='lv2') return d.lv===2;
+    return true; // 全体
+  }).filter(d=>!q||(d.w+d.m).toLowerCase().includes(q));
   document.getElementById('wcount').textContent=f.length+'語';
   const el=document.getElementById('word-list');
   if(!f.length){el.innerHTML='<div class="muted" style="padding:12px;text-align:center;">該当なし</div>';return;}
@@ -897,7 +905,7 @@ function renderList(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px;">
-        ${d.lv===2?'<span class="badge badge-lv2" style="font-size:12px;">定着</span>':''}
+        ${d.lv===2?'<span class="badge badge-lv2" style="font-size:12px;">定着</span>':'<span class="badge badge-lv1" style="font-size:12px;">学習中</span>'}
         <div style="display:flex;flex-direction:row;gap:4px;align-items:center;">
           <button style="background:${d.focus?'#ff9500':'#e1f0ff'};border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;opacity:${d.focus?'1':'0.4'};" onclick="toggleFocus(${d.id})">🔥</button>
           <button style="background:#e1f0ff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;" onclick="speakWord('${d.w.replace(/'/g,"\\'")}')">🔊</button>
@@ -946,6 +954,7 @@ function renderList(){
 }
 function switchTab(t){
   wTab=t;
+  document.getElementById('wtab-all').className='nav-tab'+(t==='all'?' active':'');
   document.getElementById('wtab-lv1').className='nav-tab'+(t==='lv1'?' active':'');
   document.getElementById('wtab-lv2').className='nav-tab'+(t==='lv2'?' active':'');
   renderList();
