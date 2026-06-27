@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.3</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.4</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -540,9 +540,11 @@ function startQuiz(mode){
     // 不正解が多い順
     pool.sort((a,b)=>(b.totalNg||0)-(a.totalNg||0));
   } else if(quizOrderMode==='recent'){
-    // 最近追加（idが大きい順）：初回またはプールが空ならソート
-    if(!recentPool.length){
+    // 最近追加（idが大きい順）：初回・品詞フィルター変更時にプールを作り直す
+    const currentCat=cat||'';
+    if(!recentPool.length || recentPool._cat !== currentCat){
       recentPool=pool.slice().sort((a,b)=>Number(b.id)-Number(a.id));
+      recentPool._cat=currentCat;
       recentOffset=0;
     }
     // 末尾を超えたらリセット
