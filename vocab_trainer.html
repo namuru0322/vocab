@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.1</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.2</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -269,11 +269,14 @@ let sessionOk=0,sessionNg=0;
 let audioCtx=null;
 let quizOrderMode='random';
 let judged=false;
+let recentOffset=0;
+let recentPool=[];
 
 function setMode(m){
   quizOrderMode=m;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('mode-'+m).classList.add('active');
+  if(m==='recent'){recentOffset=0;recentPool=[];}
 }
 
 function getAudioCtx(){
@@ -537,8 +540,21 @@ function startQuiz(mode){
     // 不正解が多い順
     pool.sort((a,b)=>(b.totalNg||0)-(a.totalNg||0));
   } else if(quizOrderMode==='recent'){
-    // 最近追加（idが大きい順）
-    pool.sort((a,b)=>Number(b.id)-Number(a.id));
+    // 最近追加（idが大きい順）：初回またはプールが空ならソート
+    if(!recentPool.length){
+      recentPool=pool.slice().sort((a,b)=>Number(b.id)-Number(a.id));
+      recentOffset=0;
+    }
+    // 末尾を超えたらリセット
+    if(recentOffset>=recentPool.length) recentOffset=0;
+    quizPool=recentPool.slice(recentOffset,recentOffset+5);
+    if(!quizPool.length){recentOffset=0;quizPool=recentPool.slice(0,5);}
+    recentOffset+=quizPool.length;
+    qMode=mode;sessionOk=0;sessionNg=0;
+    go('s-quiz');
+    document.getElementById('q-badge').innerHTML=mode==='lv1'?'<span class="badge badge-lv1">レベル1</span>':'<span class="badge badge-lv2">レベル2</span>';
+    showQ();
+    return;
   } else if(quizOrderMode==='streak'){
     // 連続正解が少ない順
     pool.sort((a,b)=>(a.streak||0)-(b.streak||0));
