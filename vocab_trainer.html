@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.4</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.5</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -445,7 +445,7 @@ async function autoScanParents(){
           max_tokens:200,
           messages:[
             {role:'system',content:'英単語の語族判定アシスタントです。JSONのみ返してください。'},
-            {role:'user',content:`以下の単語それぞれについて、動詞リストの中に【同じ語根（語幹）を持つ】動詞があれば返してください。意味が似ているだけでは不可。語根が同じ場合のみ正解です（例：verify→verification OK、waste→trash NG）。なければ空文字にしてください。\n\n単語リスト: ${wordList}\n動詞リスト: ${verbs.join(', ')}\n\n形式: {"結果":[{"w":"単語","parent":"親動詞または空文字"},...]}}`}
+            {role:'user',content:`以下の単語それぞれについて、【動詞リスト】の中に同じ語根（語幹）を持つ動詞があれば返してください。\n\n【厳守ルール】\n・必ず動詞リストの中の単語のみを返すこと。リスト外の単語は絶対に返さないこと。\n・語根が同じ場合のみ正解（例：verify→verification OK、waste→trash NG）\n・リストの中に該当する動詞がなければ必ず空文字を返すこと\n\n単語リスト: ${wordList}\n動詞リスト: ${verbs.join(', ')}\n\n形式: {"結果":[{"w":"単語","parent":"親動詞または空文字"},...]}}`}
           ]
         })
       });
@@ -457,6 +457,8 @@ async function autoScanParents(){
       // 結果をdbに反映してスプレッドシートに書き込み
       for(const r of results){
         if(!r.parent) continue;
+        // 返ってきた値がdb内の動詞として実在するか確認
+        if(!verbs.includes(r.parent)) continue;
         const entry=db.find(d=>d.w===r.w);
         if(!entry) continue;
         entry.parent=r.parent;
@@ -795,14 +797,17 @@ async function detectParent(w, c){
         max_tokens:50,
         messages:[
           {role:'system',content:'英単語の語族を判定するアシスタントです。JSONのみ返してください。'},
-          {role:'user',content:`単語「${w}」（品詞:${c}）は以下の動詞リストのどれかと【同じ語根（語幹）】を持ちますか？意味が似ているだけでは不可。語根が同じ場合のみ正解です（例：verify→verification OK、waste→trash NG）。\n動詞リスト: ${verbs.join(', ')}\n\n同じ語根の動詞があれば{"parent":"その動詞"}、なければ{"parent":""}を返してください。`}
+          {role:'user',content:`単語「${w}」（品詞:${c}）は以下の【動詞リスト】のどれかと同じ語根（語幹）を持ちますか？\n\n【厳守ルール】\n・必ず動詞リストの中の単語のみを返すこと。リスト外の単語は絶対に返さないこと。\n・語根が同じ場合のみ正解（例：verify→verification OK、waste→trash NG）\n・リストの中に該当する動詞がなければ必ず{"parent":""}を返すこと\n\n動詞リスト: ${verbs.join(', ')}\n\n同じ語根の動詞があれば{"parent":"その動詞"}、なければ{"parent":""}を返してください。`}
         ]
       })
     });
     const data=await res.json();
     const text=data.choices[0].message.content.replace(/```json|```/g,'').trim();
     const parsed=JSON.parse(text);
-    return parsed.parent||'';
+    const p=parsed.parent||'';
+    // 返ってきた値がdb内の動詞として実在するか確認
+    if(p && !verbs.includes(p)) return '';
+    return p;
   } catch(e){ return ''; }
 }
 
