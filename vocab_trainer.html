@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.10</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.11</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -263,7 +263,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <script>
 const GAS_URL='https://script.google.com/macros/s/AKfycbwdQuumPWhm6T1zswm1jeXpIo5XPbvIDuDRV63-EHZ6jz6QeyhJhNsIu1yEc9gtxx4KRg/exec';
 
-let db=[],apiKey='',quizPool=[],qIdx=0,qMode='lv1',rec=null,isListening=false,transcript='',wTab='all';
+let db=[],apiKey='',quizPool=[],qIdx=0,qMode='lv1',rec=null,isListening=false,transcript='',wTab='all',wordsRecentMode=false;
 let soundOn=true;
 let sessionOk=0,sessionNg=0;
 let audioCtx=null;
@@ -947,35 +947,74 @@ function renderList(){
     if(g.verb.c !== lastCat){
       const anchorId='cat-'+g.verb.c;
       if(!catList.includes(g.verb.c)) catList.push(g.verb.c);
-      html+=`<div id="${anchorId}" style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${g.verb.c}</div>`;
+      if(!wordsRecentMode){
+        html+=`<div id="${anchorId}" style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${g.verb.c}</div>`;
+      }
       lastCat=g.verb.c;
     }
-    html+=wordRow(g.verb,false);
-    g.related.forEach(r=>{html+=wordRow(r,true);});
+    if(!wordsRecentMode){
+      html+=wordRow(g.verb,false);
+      g.related.forEach(r=>{html+=wordRow(r,true);});
+    }
   });
   if(nonVerbGroups.length){
     const orphanCats=[...new Set(nonVerbGroups.map(g=>g.head.c))];
     orphanCats.forEach(cat=>{
       const anchorId='cat-'+cat;
       if(!catList.includes(cat)) catList.push(cat);
-      html+=`<div id="${anchorId}" style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${cat}</div>`;
-      nonVerbGroups.filter(g=>g.head.c===cat).forEach(g=>{
-        html+=wordRow(g.head,false);
-        g.children.forEach(c=>{html+=wordRow(c,true);});
-      });
+      if(!wordsRecentMode){
+        html+=`<div id="${anchorId}" style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">● ${cat}</div>`;
+        nonVerbGroups.filter(g=>g.head.c===cat).forEach(g=>{
+          html+=wordRow(g.head,false);
+          g.children.forEach(c=>{html+=wordRow(c,true);});
+        });
+      }
     });
   }
+
+  // 「最新」モード：カテゴリー・語族グループ分けをせず、id降順（新しく登録した順）でフラット表示
+  if(wordsRecentMode){
+    const recentList=[...f].sort((a,b)=>b.id-a.id);
+    html=`<div style="margin:10px -16px;padding:10px 16px;background:linear-gradient(135deg,#0071e3,#42a5f5);font-size:18px;font-weight:800;color:#fff;letter-spacing:1px;">🕐 最新（新しく登録した順）</div>`;
+    recentList.forEach(d=>{html+=wordRow(d,false);});
+  }
+
   el.innerHTML=html;
 
-  // 品詞ジャンプバーを生成
+  // 品詞ジャンプバーを生成（「最新」を「句動詞」の前に配置）
+  const jumpList=[...catList];
+  const kudoshiIdx=jumpList.indexOf('句動詞');
+  if(kudoshiIdx>=0) jumpList.splice(kudoshiIdx,0,'最新');
+  else jumpList.unshift('最新');
+
   const bar=document.getElementById('cat-jump-bar');
   if(bar){
-    bar.innerHTML=catList.map(cat=>`
-      <button onclick="document.getElementById('cat-${cat}')?.scrollIntoView({behavior:'smooth',block:'start'})"
+    bar.innerHTML=jumpList.map(cat=>{
+      if(cat==='最新'){
+        return `<button onclick="showRecentWords()"
+          style="flex-shrink:0;background:${wordsRecentMode?'#0071e3':'#fff'};border:1.5px solid #0071e3;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;color:${wordsRecentMode?'#fff':'#0071e3'};cursor:pointer;white-space:nowrap;">
+          🕐 最新
+        </button>`;
+      }
+      return `<button onclick="jumpToCategory('${cat}')"
         style="flex-shrink:0;background:#fff;border:1.5px solid #0071e3;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;color:#0071e3;cursor:pointer;white-space:nowrap;">
         ${cat}
-      </button>`).join('');
+      </button>`;
+    }).join('');
   }
+}
+function showRecentWords(){
+  // 「最新」チップ：もう一度押すと通常のグループ表示に戻る（トグル）
+  wordsRecentMode=!wordsRecentMode;
+  renderList();
+  if(wordsRecentMode) document.getElementById('word-list')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function jumpToCategory(cat){
+  if(wordsRecentMode){
+    wordsRecentMode=false;
+    renderList();
+  }
+  document.getElementById('cat-'+cat)?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function switchTab(t){
   wTab=t;
