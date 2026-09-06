@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.11</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.12</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -822,24 +822,39 @@ async function addWord(){
   document.getElementById('add-st').textContent='⏳ 語族を判定中...';
   const parent=await detectParent(w,c);
   document.getElementById('add-st').textContent='⏳ 追加中...';
+
+  // モバイル回線の瞬断等でfetch自体が失敗する（Safari「Load failed」等）ケースに対応し、
+  // サーバーから応答が得られるまで最大3回まで間隔を空けて自動リトライする。
+  // サーバーから応答があった場合（成功・業務エラーとも）はリトライせず即終了する。
+  const maxRetries=3;
   try{
-    const res=await fetch(GAS_URL,{
-      method:'POST',
-      body:JSON.stringify({action:'addWord',w,m,c,parent})
-    });
-    const data=await res.json();
-    if(data.ok){
-      const newEntry={w,m,c,lv:1,streak:0,totalOk:0,totalNg:0,id:data.id,parent};
-      db.push(newEntry);
-      updateStats();
-      document.getElementById('new-w').value='';document.getElementById('new-m').value='';document.getElementById('new-c').value='';
-      const parentMsg=parent?` (「${parent}」に紐付け)`:'';
-      document.getElementById('add-st').textContent='✓ 追加しました！（合計'+db.length+'語）'+parentMsg;
-    } else {
-      document.getElementById('add-st').textContent='❌ エラー: '+data.error;
+    for(let attempt=1; attempt<=maxRetries; attempt++){
+      try{
+        const res=await fetch(GAS_URL,{
+          method:'POST',
+          body:JSON.stringify({action:'addWord',w,m,c,parent})
+        });
+        const data=await res.json();
+        if(data.ok){
+          const newEntry={w,m,c,lv:1,streak:0,totalOk:0,totalNg:0,id:data.id,parent};
+          db.push(newEntry);
+          updateStats();
+          document.getElementById('new-w').value='';document.getElementById('new-m').value='';document.getElementById('new-c').value='';
+          const parentMsg=parent?` (「${parent}」に紐付け)`:'';
+          document.getElementById('add-st').textContent='✓ 追加しました！（合計'+db.length+'語）'+parentMsg;
+        } else {
+          document.getElementById('add-st').textContent='❌ エラー: '+data.error;
+        }
+        return;
+      } catch(e){
+        if(attempt<maxRetries){
+          document.getElementById('add-st').textContent='⚠️ 通信エラー。再試行中...('+attempt+'/'+maxRetries+')';
+          await new Promise(r=>setTimeout(r,attempt*1000));
+        } else {
+          document.getElementById('add-st').textContent='❌ 接続エラー: '+e.message+'（'+maxRetries+'回試行しましたが失敗しました。電波の良い場所でもう一度お試しください）';
+        }
+      }
     }
-  } catch(e){
-    document.getElementById('add-st').textContent='❌ 接続エラー: '+e.message;
   } finally{
     if(btn) btn.disabled=false;
   }
