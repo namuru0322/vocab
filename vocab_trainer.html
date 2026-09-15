@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.13</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.14</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -255,6 +255,11 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
     <input type="text" class="input" id="new-c" placeholder="例: 句動詞、動詞、名詞" style="margin-bottom:12px;">
     <button class="btn btn-primary" onclick="addWord()">＋ 追加する</button>
     <div id="add-st" class="muted" style="margin-top:8px;"></div>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <div class="label">登録済みか確認</div>
+    <input type="text" class="input" id="check-search" placeholder="🔍 単語または意味で検索..." oninput="renderCheckSearch()">
+    <div id="check-results"></div>
   </div>
 </div>
 
@@ -513,12 +518,36 @@ function saveKey(){
   // APIキー設定後にDBが空の場合は再読み込み
   if(!db.length) initDB();
 }
+function renderCheckSearch(){
+  const el=document.getElementById('check-results');
+  if(!el) return;
+  const q=document.getElementById('check-search').value.trim().toLowerCase();
+  if(!q){el.innerHTML='';return;}
+  // 単語一覧の「最新」表示と同じロジック：品詞を問わずid降順（登録が新しい順）でフラット表示
+  const matches=db.filter(d=>(d.w+d.m).toLowerCase().includes(q)).sort((a,b)=>b.id-a.id);
+  if(!matches.length){
+    el.innerHTML='<div class="muted" style="padding:10px 0;">一致する単語は見つかりませんでした（未登録の可能性があります）</div>';
+    return;
+  }
+  el.innerHTML=`<div class="muted" style="padding:8px 0 4px;">${matches.length}件ヒット</div>`+matches.map(d=>`
+    <div style="padding:10px 0;border-bottom:1px solid #eee;">
+      <div style="font-size:15px;font-weight:700;color:#1d1d1f;">${d.w} <span style="font-size:12px;font-weight:400;color:#6e6e73;">［${d.c}］</span></div>
+      <div style="font-size:14px;color:#1d1d1f;margin-top:2px;">${d.m}</div>
+    </div>
+  `).join('');
+}
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if(id==='s-words'){
     wordsRecentMode=true; // 単語一覧を開くたびに「最新」を初期表示にする
     renderList();
+  }
+  if(id==='s-add'){
+    const cs=document.getElementById('check-search');
+    if(cs) cs.value='';
+    const cr=document.getElementById('check-results');
+    if(cr) cr.innerHTML='';
   }
 }
 function startQuiz(mode){
