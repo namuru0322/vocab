@@ -92,7 +92,7 @@ h1{font-size:40px;font-weight:700;text-align:center;padding:14px 0 4px;}
 <!-- HOME -->
 <div class="screen active" id="s-home">
   <h1>英単語トレーナー</h1>
-  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.17</span></p>
+  <p class="subtitle">音声・テキスト両対応 / レベル管理　<span style="font-size:12px;color:#aaa;">v7.18</span></p>
   <div id="sync-status" style="text-align:center;font-size:13px;color:#6e6e73;margin-bottom:8px;"></div>
 
   <div class="stat-grid">
@@ -636,9 +636,34 @@ function showQ(){
 }
 function updateDots(n){}
 // ===== 読み上げ（TTS）=====
-// iOSの更新で音が出なくなる事象への対策：①音声を明示的に指定 ②再生中でなければcancel()しない
-// ③一時停止状態ならresume() ④開始しない／エラーの場合は画面に理由を表示（診断用）
-let ttsVoices=[];
+// iOS 27.2以降、ブラウザ標準の読み上げ(speechSynthesis)がサイレントスイッチONで無音になったため、
+// APIキーがある場合はOpenAIの音声(mp3)を<audio>で再生する（<audio>はサイレントスイッチONでも鳴る）。
+// 取得に失敗した場合・APIキー未設定の場合は従来のspeechSynthesisにフォールバックする。
+const TTS_SILENT_WAV='data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+let ttsEl=null,ttsSeq=0,ttsVoices=[];
+const ttsCache=new Map();
+function ttsAudioSession(on){
+  try{if(navigator.audioSession)navigator.audioSession.type=on?'playback':'auto';}catch(e){}
+}
+function ttsUnlock(){ // ユーザー操作中に無音を再生して、この<audio>要素を「再生許可済み」にする
+  try{
+    if(!ttsEl){ttsEl=new Audio();ttsEl.setAttribute('playsinline','');}
+    ttsEl.src=TTS_SILENT_WAV;
+    const pr=ttsEl.play();if(pr&&pr.catch)pr.catch(()=>{});
+  }catch(e){}
+}
+async function fetchTtsUrl(text){
+  if(ttsCache.has(text))return ttsCache.get(text);
+  const res=await fetch('https://api.openai.com/v1/audio/speech',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body:JSON.stringify({model:'tts-1',voice:'alloy',input:text,speed:0.9,response_format:'mp3'})
+  });
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const url=URL.createObjectURL(await res.blob());
+  ttsCache.set(text,url);
+  return url;
+}
 function loadTtsVoices(){
   try{ttsVoices=window.speechSynthesis.getVoices()||[];}catch(e){ttsVoices=[];}
 }
@@ -647,7 +672,7 @@ if('speechSynthesis' in window){
   try{window.speechSynthesis.addEventListener('voiceschanged',loadTtsVoices);}catch(e){}
 }
 function pickEnVoice(){
-  if(!ttsVoices.length) loadTtsVoices();
+  if(!ttsVoices.length)loadTtsVoices();
   return ttsVoices.find(v=>v.lang==='en-US'&&v.default)
       || ttsVoices.find(v=>v.lang==='en-US')
       || ttsVoices.find(v=>(v.lang||'').toLowerCase().startsWith('en'))
@@ -663,32 +688,15 @@ function ttsToast(msg){
   el.textContent=msg;el.style.display='block';
   clearTimeout(el._t);el._t=setTimeout(()=>{el.style.display='none';},6000);
 }
-// サイレントスイッチがONでも読み上げが聞こえるよう、読み上げ中だけ音声の出力方式を「再生(playback)」にする。
-// 終了後は通常(auto)に戻す（音声認識のマイクと干渉させないため）。
-const TTS_SILENT_WAV='data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
-let ttsSilentEl=null,ttsSeq=0;
-function ttsAudioSession(on){
-  try{if(navigator.audioSession)navigator.audioSession.type=on?'playback':'auto';}catch(e){}
-  try{
-    if(on){
-      if(!ttsSilentEl){ttsSilentEl=new Audio(TTS_SILENT_WAV);ttsSilentEl.loop=true;ttsSilentEl.setAttribute('playsinline','');}
-      const pr=ttsSilentEl.play();if(pr&&pr.catch)pr.catch(()=>{});
-    } else if(ttsSilentEl){ttsSilentEl.pause();}
-  }catch(e){}
-}
-function speakText(text){
-  if(!('speechSynthesis' in window)){ttsToast('🔇 このブラウザは読み上げに対応していません');return;}
+function speakSynth(text,release){ // 従来のブラウザ標準読み上げ（フォールバック）
+  if(!('speechSynthesis' in window)){ttsToast('🔇 このブラウザは読み上げに対応していません');release();return;}
   const synth=window.speechSynthesis;
-  const seq=++ttsSeq;
-  const release=()=>{if(seq===ttsSeq)ttsAudioSession(false);};
-  ttsAudioSession(true);
   const u=new SpeechSynthesisUtterance(text);
   u.lang='en-US';u.rate=0.85;
   const v=pickEnVoice();if(v)u.voice=v;
   let started=false,errored=false;
   u.onstart=()=>{started=true;};
   u.onend=release;
-  setTimeout(release,20000);
   u.onerror=(e)=>{if(e&&(e.error==='canceled'||e.error==='interrupted'))return;errored=true;release();ttsToast('🔇 読み上げエラー: '+(e&&e.error||'unknown')+'（音声数:'+ttsVoices.length+'）');};
   const run=()=>{
     try{if(synth.paused)synth.resume();}catch(e){}
@@ -702,6 +710,28 @@ function speakText(text){
   };
   if(synth.speaking||synth.pending){synth.cancel();setTimeout(run,120);}
   else run();
+}
+function speakText(text){
+  const seq=++ttsSeq;
+  const release=()=>{if(seq===ttsSeq)ttsAudioSession(false);};
+  setTimeout(release,30000);
+  ttsAudioSession(true);
+  if(!apiKey){speakSynth(text,release);return;}
+  ttsUnlock();
+  (async()=>{
+    try{
+      const url=await fetchTtsUrl(text);
+      if(seq!==ttsSeq)return; // 後からタップされた読み上げを優先
+      ttsEl.onended=release;
+      ttsEl.onerror=()=>{release();speakSynth(text,release);};
+      ttsEl.src=url;
+      await ttsEl.play();
+    }catch(e){
+      if(seq!==ttsSeq)return;
+      console.warn('tts audio error',e);
+      speakSynth(text,release);
+    }
+  })();
 }
 function speak(){
   const q=quizPool[qIdx];if(!q)return;
